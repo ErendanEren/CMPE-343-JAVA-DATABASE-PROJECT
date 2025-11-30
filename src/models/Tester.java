@@ -6,19 +6,29 @@ import dao.ContactSearchDAO;
 import java.sql.Connection;
 import java.util.List;
 
-public class Tester extends User { // SENİN ALANIN: Veritabanı işlemleri için DAO nesnesi
+/**
+ * Represents the "tester".
+ * This class extends the {@link User} class to gain certain functions.
+ * For the tester who has the read-only access.
+ * <p>
+ * Testers are allowed list, search, and sort contacts but cannot add, update, or delete them.
+ * Uses {@link ContactSearchDAO} to perform database searches securely
+ * </p>
+ * @author Arda Dulger
+ */
+
+public class Tester extends User {
     private ContactSearchDAO searchDAO;
 
-    // Constructor güncellendi: Connection alıp DAO'yu başlatıyoruz
+
     public Tester(int userId, String username, String name, String surname, Connection connection) {
         super();
-        // User sınıfında parametreli constructor olmadığı için
-        // verileri Setter metodları ile yüklüyoruz:
+
         this.setUserId(userId);
         this.setUsername(username);
         this.setName(name);
         this.setSurname(surname);
-        this.setRole("Tester"); // Rolü elle sabitliyoruz
+        this.setRole("Tester");
 
         this.searchDAO = new ContactSearchDAO(connection);
     }
@@ -42,17 +52,34 @@ public class Tester extends User { // SENİN ALANIN: Veritabanı işlemleri içi
             );
 
             switch (choice) {
-                case "1" -> changePassword(scanner);
-                case "2" -> listAllContacts(scanner);
-                case "3" -> searchContacts(scanner);
-                case "4" -> sortContacts(scanner);
-                case "0" -> running = false;
-                default -> ConsoleUI.printInvalidChoice();
+                case "1" :
+                    changePassword(scanner);
+                    break;
+
+                case "2" :
+                    listAllContacts(scanner);
+                    break;
+
+                case "3" :
+                    searchContacts(scanner);
+                    break;
+
+                case "4" :
+                    sortContacts(scanner);
+                    break;
+
+                case "0" :
+                    running = false;
+                    break;
+
+                default :
+                    ConsoleUI.printInvalidChoice();
+                    break;
             }
         }
     }
 
-    // Junior / Senior da kullanacağı için protected ve imzaları aynı
+
     protected void changePassword(Scanner scanner) {
         ConsoleUI.clearConsole();
         System.out.println("Change password (Tester)...");
@@ -65,11 +92,27 @@ public class Tester extends User { // SENİN ALANIN: Veritabanı işlemleri içi
         ConsoleUI.pause();
     }
 
+    /**
+     * Performs various person search operations and allows viewing the search sub-menu.
+     * <p>
+     * This method allows users to perform searches without having to return to the main menu.
+     * Two types of search criteria can be specified.
+     * <ul>
+     * <li><b>Single-Field Search:</b> Search by First Name, Last Name, or Phone Number.</li>
+     * <li><b>Multi-Field Search:</b> Advanced search combinations (e.g., Name + Birth Month).</li>
+     * </ul>
+     * </p>
+     * <p>
+     * Before sending a query to the database via Dao, it performs <b>input validation</b>
+     * For example, checking if the entered month is between 1-12 or if the entered phone number is a digit.
+     * @param scanner {@code Scanner } object is used to receive input.
+     * @author Arda Dulger
+     */
     protected void searchContacts(Scanner scanner) {
         boolean searching = true;
         while (searching) {
             ConsoleUI.clearConsole();
-            // Proje isterlerine göre: 3 tekil, 3 çoklu arama seçeneği [cite: 29]
+
             System.out.println(ConsoleUI.YELLOW_BOLD + "=== Search Contacts (Tester) ===" + ConsoleUI.RESET);
             System.out.println("1) Search by First Name (Partial)");
             System.out.println("2) Search by Last Name (Partial)");
@@ -84,37 +127,36 @@ public class Tester extends User { // SENİN ALANIN: Veritabanı işlemleri içi
             List<Contact> results = null;
 
             switch (choice) {
-                case "1" -> {
-                    // Tekil Arama 1: İsim
+                case "1":
+
                     System.out.print("Enter first name (or part of it): ");
-                    String query = scanner.nextLine();
-                    results = searchDAO.searchByFirstName(query);
-                }
-                case "2" -> {
-                    // Tekil Arama 2: Soyisim
+                    String firstNameQuery = scanner.nextLine();
+                    results = searchDAO.searchByFirstName(firstNameQuery);
+
+
+                case "2":
+
                     System.out.print("Enter last name (or part of it): ");
-                    String query = scanner.nextLine();
-                    results = searchDAO.searchByLastName(query);
-                }
-                case "3" -> {
-                    // Tekil Arama 3: Telefon (Validasyonlu) [cite: 31, 38]
+                    String lastNameQuery = scanner.nextLine();
+                    results = searchDAO.searchByLastName(lastNameQuery);
+                    break;
+
+                case "3":
+
                     System.out.print("Enter phone number (digits only): ");
                     String phone = scanner.nextLine();
-
-                    // VALIDATION KONTROLÜ: Veri mantıklı mı? [cite: 28, 51]
                     if (searchDAO.isValidPhoneNumber(phone)) {
                         results = searchDAO.searchByPhoneNumber(phone);
                     } else {
                         System.out.println(ConsoleUI.RED + "Invalid format! Phone should contain only digits/spaces." + ConsoleUI.RESET);
                     }
-                }
-                case "4" -> {
-                    // Çoklu Arama 1: İsim ve Ay [cite: 33]
+                    break;
+
+                case "4":
+
                     System.out.print("Enter name: ");
                     String name = scanner.nextLine();
                     System.out.print("Enter birth month (1-12): ");
-
-                    // VALIDATION: Ay girişi sayısal mı ve 1-12 arasında mı? [cite: 38]
                     try {
                         int month = Integer.parseInt(scanner.nextLine());
                         if (searchDAO.isValidMonth(month)) {
@@ -123,30 +165,38 @@ public class Tester extends User { // SENİN ALANIN: Veritabanı işlemleri içi
                             System.out.println(ConsoleUI.RED + "Invalid month! Please enter between 1-12." + ConsoleUI.RESET);
                         }
                     } catch (NumberFormatException e) {
-                        System.out.println(ConsoleUI.RED + "Invalid input! Please enter a number for month." + ConsoleUI.RESET); //
+                        System.out.println(ConsoleUI.RED + "Invalid input! Please enter a number for month." + ConsoleUI.RESET);
                     }
-                }
-                case "5" -> {
-                    // Çoklu Arama 2: Soyisim ve Şehir [cite: 32]
+                    break;
+
+                case "5":
+
                     System.out.print("Enter lastname: ");
                     String lname = scanner.nextLine();
                     System.out.print("Enter city/address part: ");
                     String city = scanner.nextLine();
                     results = searchDAO.searchByLastnameAndCity(lname, city);
-                }
-                case "6" -> {
-                    // Çoklu Arama 3: Telefon parçası ve Email parçası [cite: 33]
+                    break;
+
+                case "6":
+
                     System.out.print("Enter phone part (e.g. 555): ");
                     String phonePart = scanner.nextLine();
                     System.out.print("Enter email part (e.g. gmail): ");
                     String emailPart = scanner.nextLine();
                     results = searchDAO.searchByPhonePartAndEmailPart(phonePart, emailPart);
-                }
-                case "0" -> searching = false;
-                default -> ConsoleUI.printInvalidChoice();
+                    break;
+
+                case "0":
+                    searching = false;
+                    break;
+
+                default:
+                    ConsoleUI.printInvalidChoice();
+                    break;
             }
 
-            // Sonuçları Ekrana Basma İşlemi
+            //
             if (results != null) {
                 if (results.isEmpty()) {
                     System.out.println(ConsoleUI.RED + "No contacts found matching criteria." + ConsoleUI.RESET);
@@ -156,11 +206,22 @@ public class Tester extends User { // SENİN ALANIN: Veritabanı işlemleri içi
                 }
                 ConsoleUI.pause();
             } else if (!choice.equals("0")) {
-                // Hata mesajı varsa (validasyon hatası gibi) beklet
+
                 ConsoleUI.pause();
             }
         }
     }
+
+    /**
+     * Prints the list of found people in tabular form.
+     * <p>
+     * This helper allows to iterate and display the contact list.
+     * key attributes (ID, Name, Surname, Phone, Email) in arranged columns using {@code printf}.
+     * </p>
+     * @param contacts A {@code List} of {@link Contact} objects retrieved from the database.
+     * If the list empty, it will be not printed.(handled by caller)
+     * @author Arda Dulger
+     */
     private void printSearchResults(List<Contact> contacts) {
         System.out.println("-------------------------------------------------------------------------");
         System.out.printf("%-5s %-15s %-15s %-15s %-20s\n", "ID", "First Name", "Last Name", "Phone", "Email");
