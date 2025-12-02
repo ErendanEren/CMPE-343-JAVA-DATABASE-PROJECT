@@ -34,7 +34,7 @@ public class Tester extends User {
 
         try {
 
-            Connection connection = DatabaseConnection.getUserById();
+            Connection connection = DatabaseConnection.getConnection();
             this.searchDAO = new ContactSearchDAO(connection);
         } catch (Exception e) {
             System.out.println("Error:Tester failed to establish database connection!");
