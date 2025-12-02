@@ -11,8 +11,7 @@ import java.util.Scanner;
 import dao.ContactSearchDAO;
 import java.sql.Connection;
 import java.util.List;
-import Database.DatabaseConnection;
-import java.sql.SQLException;
+
 
 /**
  * Represents the "Tester" role within the application.
@@ -67,6 +66,7 @@ public class Tester extends User {
         boolean running = true;
 
         while (running) {
+
             String choice = ConsoleUI.showMenu(
                     ConsoleUI.BLUE_BOLD + "Tester Menu" + ConsoleUI.RESET,
                     new String[]{
