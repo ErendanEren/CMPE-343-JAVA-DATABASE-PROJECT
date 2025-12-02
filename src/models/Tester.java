@@ -11,6 +11,8 @@ import java.util.Scanner;
 import dao.ContactSearchDAO;
 import java.sql.Connection;
 import java.util.List;
+import Database.DatabaseConnection;
+import java.sql.SQLException;
 
 /**
  * Represents the "tester".
@@ -20,12 +22,25 @@ import java.util.List;
  * Testers are allowed list, search, and sort contacts but cannot add, update, or delete them.
  * Uses {@link ContactSearchDAO} to perform database searches securely
  * </p>
- * @author Arda Dulger
+ * @author Arda Dülger
  */
 
 public class Tester extends User {
     private ContactSearchDAO searchDAO;
 
+    public Tester() {
+        super();
+        this.setRole("Tester");
+
+        try {
+
+            Connection connection = DatabaseConnection.getUserById();
+            this.searchDAO = new ContactSearchDAO(connection);
+        } catch (Exception e) {
+            System.out.println("Error:Tester failed to establish database connection!");
+            e.printStackTrace();
+        }
+    }
 
     public Tester(int userId, String username, String name, String surname, Connection connection) {
         super();
@@ -205,7 +220,7 @@ public class Tester extends User {
                     System.out.print("Enter first name (or part of it): ");
                     String firstNameQuery = scanner.nextLine();
                     results = searchDAO.searchByFirstName(firstNameQuery);
-
+                    break;
 
                 case "2":
 
@@ -221,7 +236,7 @@ public class Tester extends User {
                     if (searchDAO.isValidPhoneNumber(phone)) {
                         results = searchDAO.searchByPhoneNumber(phone);
                     } else {
-                        System.out.println("Invalid format! Phone should contain only digits/spaces.");
+                        System.out.println("Invalid format! Phone should contain only digits/spaces." );
                     }
                     break;
 
