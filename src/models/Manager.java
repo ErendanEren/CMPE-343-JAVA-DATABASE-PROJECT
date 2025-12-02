@@ -29,8 +29,12 @@ public class Manager extends User {
     /**
      * Displays the main menu for the Manager role and handles user input.
      * The menu loop continues until the user chooses to logout.
+     * <p>
+     * This method acts as the main controller for the Manager's session.
+     * </p>
      *
      * @param scanner The Scanner object used to read user input from the console.
+     * @author Zafer Mert Serinken
      */
     @Override
     public void showMenu(Scanner scanner) {
@@ -78,6 +82,12 @@ public class Manager extends User {
 
     /**
      * Restores the most recently deleted user from the stack back to the database.
+     * <p>
+     * It retrieves the last {@code User} object pushed onto the stack and executes an INSERT statement.
+     * If the restoration fails, the user is pushed back onto the stack to prevent data loss.
+     * </p>
+     *
+     * @author Zafer Mert Serinken
      */
     private void undoLastDelete() {
         if (deletedUsersStack.isEmpty()) {
@@ -111,7 +121,14 @@ public class Manager extends User {
     }
 
     /**
-     * Deletes a user. Before deletion, the user data is backed up to a Stack.
+     * Deletes a user from the system based on the provided User ID.
+     * <p>
+     * Before deletion, the user data is backed up to a Stack to enable the Undo operation.
+     * Includes validation to prevent the manager from deleting their own account.
+     * </p>
+     *
+     * @param scanner The Scanner object used to read the User ID from the console.
+     * @author Zafer Mert Serinken
      */
     public void deleteUser(Scanner scanner) {
         listAllUsers();
@@ -163,7 +180,15 @@ public class Manager extends User {
     }
 
     /**
-     * Helper method to get User object for backup.
+     * Retrieves a User object from the database using the given User ID.
+     * <p>
+     * This is a helper method primarily used for backing up user data before deletion.
+     * It uses polymorphism to instantiate the correct subclass based on the role string.
+     * </p>
+     *
+     * @param id The unique identifier of the user to retrieve.
+     * @return A User object (subclass determined by role) containing the user's data, or null if not found.
+     * @author Zafer Mert Serinken
      */
     private User getUserById(int id) {
         String sql = "SELECT * FROM users WHERE user_id = ?";
@@ -197,6 +222,14 @@ public class Manager extends User {
         return null;
     }
 
+    /**
+     * Lists all users currently registered in the database.
+     * <p>
+     * Displays ID, Username, Name, Surname, and Role in a formatted table output.
+     * </p>
+     *
+     * @author Zafer Mert Serinken
+     */
     public void listAllUsers() {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.BLUE_BOLD + "--- Current Staff List ---" + ConsoleUI.RESET);
@@ -223,6 +256,15 @@ public class Manager extends User {
         ConsoleUI.pause();
     }
 
+    /**
+     * Adds a new user to the system.
+     * <p>
+     * Checks for duplicate usernames to ensure data integrity and hashes the password using SHA-256 before storage.
+     * </p>
+     *
+     * @param scanner The Scanner object used to read user input.
+     * @author Zafer Mert Serinken
+     */
     public void addUser(Scanner scanner) {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.BLUE_BOLD + "--- Add New User ---" + ConsoleUI.RESET);
@@ -275,7 +317,13 @@ public class Manager extends User {
     }
 
     /**
-     * Updates an existing user's information and ROLE (Promotion).
+     * Updates an existing user's information and ROLE (Promotion/Demotion).
+     * <p>
+     * Allows partial updates; if fields are left empty by the user, the existing database values are preserved.
+     * </p>
+     *
+     * @param scanner The Scanner object used to read user input.
+     * @author Zafer Mert Serinken
      */
     public void updateUser(Scanner scanner) {
         listAllUsers();
@@ -346,7 +394,13 @@ public class Manager extends User {
     }
 
     /**
-     * Displays comprehensive statistical information including Age Analytics.
+     * Displays comprehensive statistical information about the contacts.
+     * <p>
+     * Provides analytics such as total count, LinkedIn usage, average age,
+     * and identifies the youngest/oldest contacts in the directory.
+     * </p>
+     *
+     * @author Zafer Mert Serinken
      */
     public void showContactStats() {
         ConsoleUI.clearConsole();
@@ -406,6 +460,15 @@ public class Manager extends User {
         ConsoleUI.pause();
     }
 
+    /**
+     * Changes the password of the currently logged-in Manager.
+     * <p>
+     * The new password is validated (min length) and hashed using SHA-256 before being stored.
+     * </p>
+     *
+     * @param scanner The Scanner object used to read the new password.
+     * @author Zafer Mert Serinken
+     */
     public void changePassword(Scanner scanner) {
         ConsoleUI.clearConsole();
         System.out.println("--- Change My Password ---");
@@ -434,6 +497,17 @@ public class Manager extends User {
         }
     }
 
+    /**
+     * Hashes a plain text password using the SHA-256 algorithm.
+     * <p>
+     * Provides one-way encryption for secure password storage.
+     * </p>
+     *
+     * @param plainText The plain text password to hash.
+     * @return A hexadecimal string representation of the hashed password.
+     * @throws RuntimeException if the SHA-256 algorithm is not available in the environment.
+     * @author Zafer Mert Serinken
+     */
     private String hashPassword(String plainText) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -450,6 +524,16 @@ public class Manager extends User {
         }
     }
 
+    /**
+     * Checks if a given username already exists in the database.
+     * <p>
+     * Used during user creation to enforce unique usernames.
+     * </p>
+     *
+     * @param username The username string to check.
+     * @return {@code true} if the username exists, {@code false} otherwise.
+     * @author Zafer Mert Serinken
+     */
     private boolean isUsernameExists(String username) {
         String sql = "SELECT 1 FROM users WHERE username = ?";
         try (Connection conn = DatabaseConnection.getConnection();
