@@ -39,7 +39,7 @@ public class Manager extends User {
         while (running) {
             String headerTitle = ConsoleUI.BLUE_BOLD + "Manager Panel: " + getName() + " " + getSurname() + ConsoleUI.RESET;
 
-            // Stack durumu (Boş mu dolu mu) menüde gösterilir
+            // Stack durumunu menüde göster
             String undoOption = deletedUsersStack.isEmpty() ? "7) Undo Last Delete (Stack Empty)" : ConsoleUI.GREEN_BOLD + "7) UNDO LAST DELETE (" + deletedUsersStack.size() + ")" + ConsoleUI.RESET;
 
             String choice = ConsoleUI.showMenu(
@@ -78,7 +78,6 @@ public class Manager extends User {
 
     /**
      * Restores the most recently deleted user from the stack back to the database.
-     * If the stack is empty, it informs the user that there is nothing to undo.
      */
     private void undoLastDelete() {
         if (deletedUsersStack.isEmpty()) {
@@ -86,9 +85,7 @@ public class Manager extends User {
             return;
         }
 
-        // 1. Stack'in tepesinden son silinen kişiyi al (POP)
         User restoredUser = deletedUsersStack.pop();
-
         System.out.println("Restoring user: " + restoredUser.getName() + " " + restoredUser.getSurname() + "...");
 
         String sql = "INSERT INTO users (username, password_hash, name, surname, role) VALUES (?, ?, ?, ?, ?)";
@@ -97,7 +94,7 @@ public class Manager extends User {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, restoredUser.getUsername());
-            pstmt.setString(2, restoredUser.getPassword_hash()); // Zaten hashli duruyordu
+            pstmt.setString(2, restoredUser.getPassword_hash());
             pstmt.setString(3, restoredUser.getName());
             pstmt.setString(4, restoredUser.getSurname());
             pstmt.setString(5, restoredUser.getRole());
@@ -108,17 +105,13 @@ public class Manager extends User {
             }
 
         } catch (SQLException e) {
-            // Hata olursa kullanıcıyı kaybetmemek için yığına geri koy
             deletedUsersStack.push(restoredUser);
             ConsoleUI.printError("Undo Failed (User pushed back to stack): " + e.getMessage());
         }
     }
 
     /**
-     * Deletes a user from the system based on the provided User ID.
-     * Before deletion, the user data is backed up to a Stack to enable the Undo operation.
-     *
-     * @param scanner The Scanner object used to read the User ID from the console.
+     * Deletes a user. Before deletion, the user data is backed up to a Stack.
      */
     public void deleteUser(Scanner scanner) {
         listAllUsers();
@@ -133,15 +126,13 @@ public class Manager extends User {
             return;
         }
 
-        // KENDİNİ SİLME KORUMASI
         if (targetId == getUserId()) {
             ConsoleUI.printError("CRITICAL: You cannot fire yourself!");
             return;
         }
 
-        // ADIM 1: Silmeden önce veriyi çek (BACKUP)
+        // BACKUP (Yedekle)
         User userBackup = getUserById(targetId);
-
         if (userBackup == null) {
             ConsoleUI.printError("User ID not found. Cannot delete.");
             return;
@@ -150,7 +141,7 @@ public class Manager extends User {
         System.out.print("Are you sure you want to fire " + userBackup.getName() + "? (yes/no): ");
         if (!scanner.nextLine().trim().equalsIgnoreCase("yes")) return;
 
-        // ADIM 2: Veritabanından Sil
+        // DELETE (Sil)
         String sql = "DELETE FROM users WHERE user_id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -160,7 +151,6 @@ public class Manager extends User {
             int affected = pstmt.executeUpdate();
 
             if (affected > 0) {
-                // ADIM 3: Başarılıysa Stack'e at (PUSH)
                 deletedUsersStack.push(userBackup);
                 ConsoleUI.printInfo("User deleted. (Added to Undo Stack)");
             } else {
@@ -173,11 +163,7 @@ public class Manager extends User {
     }
 
     /**
-     * Retrieves a User object from the database using the given User ID.
-     * This is a helper method primarily used for backing up user data before deletion.
-     *
-     * @param id The unique identifier of the user to retrieve.
-     * @return A User object (subclass determined by role) containing the user's data, or null if not found.
+     * Helper method to get User object for backup.
      */
     private User getUserById(int id) {
         String sql = "SELECT * FROM users WHERE user_id = ?";
@@ -189,7 +175,6 @@ public class Manager extends User {
 
             if (rs.next()) {
                 String role = rs.getString("role");
-                // Polymorphism: Rolüne göre doğru nesneyi oluştur
                 User u = switch (role) {
                     case "Tester" -> new Tester();
                     case "Junior Developer" -> new Junior();
@@ -212,10 +197,6 @@ public class Manager extends User {
         return null;
     }
 
-    /**
-     * Lists all users currently registered in the database.
-     * Displays ID, Username, Name, Surname, and Role in a formatted table.
-     */
     public void listAllUsers() {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.BLUE_BOLD + "--- Current Staff List ---" + ConsoleUI.RESET);
@@ -242,12 +223,6 @@ public class Manager extends User {
         ConsoleUI.pause();
     }
 
-    /**
-     * Adds a new user to the system.
-     * Checks for duplicate usernames and hashes the password before storage.
-     *
-     * @param scanner The Scanner object used to read user input.
-     */
     public void addUser(Scanner scanner) {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.BLUE_BOLD + "--- Add New User ---" + ConsoleUI.RESET);
@@ -280,7 +255,6 @@ public class Manager extends User {
         };
 
         String hashedPassword = hashPassword(password);
-
         String sql = "INSERT INTO users (username, password_hash, name, surname, role) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -301,10 +275,7 @@ public class Manager extends User {
     }
 
     /**
-     * Updates an existing user's information, including Name, Surname, and Role (Promotion).
-     * If fields are left empty, the existing values are preserved.
-     *
-     * @param scanner The Scanner object used to read user input.
+     * Updates an existing user's information and ROLE (Promotion).
      */
     public void updateUser(Scanner scanner) {
         listAllUsers();
@@ -346,7 +317,6 @@ public class Manager extends User {
             return;
         }
 
-        // Eski verileri çekip, boş geçilen alanları eski verilerle dolduruyoruz
         User current = getUserById(targetId);
         if (current == null) {
             ConsoleUI.printError("User not found!");
@@ -376,29 +346,59 @@ public class Manager extends User {
     }
 
     /**
-     * Displays statistical information about the contacts in the database.
-     * Currently shows total contact count and LinkedIn usage.
+     * Displays comprehensive statistical information including Age Analytics.
      */
     public void showContactStats() {
         ConsoleUI.clearConsole();
-        System.out.println(ConsoleUI.BLUE_BOLD + "--- System Statistics ---" + ConsoleUI.RESET);
+        System.out.println(ConsoleUI.BLUE_BOLD + "--- System Statistics & Analytics ---" + ConsoleUI.RESET);
 
+        // 1. Temel Sayılar
         String sqlTotal = "SELECT COUNT(*) as total FROM contacts";
         String sqlLinkedin = "SELECT COUNT(*) as linked FROM contacts WHERE linkedin_url IS NOT NULL AND linkedin_url != ''";
+
+        // 2. Yaş Analizleri (MySQL Fonksiyonları)
+        String sqlAvgAge = "SELECT AVG(TIMESTAMPDIFF(YEAR, birth_date, CURDATE())) as avg_age FROM contacts WHERE birth_date IS NOT NULL";
+        String sqlYoungest = "SELECT first_name, last_name, birth_date FROM contacts WHERE birth_date IS NOT NULL ORDER BY birth_date DESC LIMIT 1";
+        String sqlOldest = "SELECT first_name, last_name, birth_date FROM contacts WHERE birth_date IS NOT NULL ORDER BY birth_date ASC LIMIT 1";
 
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement()) {
 
             ResultSet rs = stmt.executeQuery(sqlTotal);
-            if (rs.next()) {
-                System.out.println("Total Contacts: " + ConsoleUI.CYAN_BOLD + rs.getInt("total") + ConsoleUI.RESET);
-            }
+            if (rs.next()) System.out.println("Total Contacts: " + ConsoleUI.CYAN_BOLD + rs.getInt("total") + ConsoleUI.RESET);
             rs.close();
 
             rs = stmt.executeQuery(sqlLinkedin);
+            if (rs.next()) System.out.println("With LinkedIn: " + ConsoleUI.CYAN_BOLD + rs.getInt("linked") + ConsoleUI.RESET);
+            rs.close();
+
+            System.out.println("--------------------------------");
+
+            // Yaş Ortalaması
+            rs = stmt.executeQuery(sqlAvgAge);
             if (rs.next()) {
-                System.out.println("With LinkedIn: " + ConsoleUI.CYAN_BOLD + rs.getInt("linked") + ConsoleUI.RESET);
+                double avg = rs.getDouble("avg_age");
+                System.out.printf("Average Age: " + ConsoleUI.YELLOW_BOLD + "%.1f years" + ConsoleUI.RESET + "%n", avg);
             }
+            rs.close();
+
+            // En Genç
+            rs = stmt.executeQuery(sqlYoungest);
+            if (rs.next()) {
+                System.out.println("Youngest Contact: " + ConsoleUI.GREEN_BOLD +
+                        rs.getString("first_name") + " " + rs.getString("last_name") +
+                        " (" + rs.getDate("birth_date") + ")" + ConsoleUI.RESET);
+            }
+            rs.close();
+
+            // En Yaşlı
+            rs = stmt.executeQuery(sqlOldest);
+            if (rs.next()) {
+                System.out.println("Oldest Contact:   " + ConsoleUI.RED_BOLD +
+                        rs.getString("first_name") + " " + rs.getString("last_name") +
+                        " (" + rs.getDate("birth_date") + ")" + ConsoleUI.RESET);
+            }
+            rs.close();
 
         } catch (SQLException e) {
             ConsoleUI.printError("Stats Error: " + e.getMessage());
@@ -406,12 +406,6 @@ public class Manager extends User {
         ConsoleUI.pause();
     }
 
-    /**
-     * Changes the password of the currently logged-in Manager.
-     * The new password is hashed before being stored.
-     *
-     * @param scanner The Scanner object used to read the new password.
-     */
     public void changePassword(Scanner scanner) {
         ConsoleUI.clearConsole();
         System.out.println("--- Change My Password ---");
@@ -440,15 +434,6 @@ public class Manager extends User {
         }
     }
 
-    // ================= YARDIMCI METODLAR =================
-
-    /**
-     * Hashes a plain text password using the SHA-256 algorithm.
-     *
-     * @param plainText The plain text password to hash.
-     * @return A hexadecimal string representation of the hashed password.
-     * @throws RuntimeException if the SHA-256 algorithm is not available.
-     */
     private String hashPassword(String plainText) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -465,12 +450,6 @@ public class Manager extends User {
         }
     }
 
-    /**
-     * Checks if a given username already exists in the database.
-     *
-     * @param username The username to check.
-     * @return true if the username exists, false otherwise.
-     */
     private boolean isUsernameExists(String username) {
         String sql = "SELECT 1 FROM users WHERE username = ?";
         try (Connection conn = DatabaseConnection.getConnection();
