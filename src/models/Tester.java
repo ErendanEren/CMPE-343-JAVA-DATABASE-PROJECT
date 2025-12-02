@@ -5,6 +5,8 @@ import java.util.Scanner;
 import dao.ContactSearchDAO;
 import java.sql.Connection;
 import java.util.List;
+import Database.DatabaseConnection;
+import java.sql.SQLException;
 
 /**
  * Represents the "tester".
@@ -20,6 +22,19 @@ import java.util.List;
 public class Tester extends User {
     private ContactSearchDAO searchDAO;
 
+    public Tester() {
+        super();
+        this.setRole("Tester");
+
+        try {
+
+            Connection connection = DatabaseConnection.getUserById();
+            this.searchDAO = new ContactSearchDAO(connection);
+        } catch (Exception e) {
+            System.out.println("Error: Tester failed to establish database connection!");
+            e.printStackTrace();
+        }
+    }
 
     public Tester(int userId, String username, String name, String surname, Connection connection) {
         super();
@@ -132,7 +147,7 @@ public class Tester extends User {
                     System.out.print("Enter first name (or part of it): ");
                     String firstNameQuery = scanner.nextLine();
                     results = searchDAO.searchByFirstName(firstNameQuery);
-
+                    break;
 
                 case "2":
 
@@ -148,7 +163,7 @@ public class Tester extends User {
                     if (searchDAO.isValidPhoneNumber(phone)) {
                         results = searchDAO.searchByPhoneNumber(phone);
                     } else {
-                        System.out.println(ConsoleUI.RED + "Invalid format! Phone should contain only digits/spaces." + ConsoleUI.RESET);
+                        System.out.println("Invalid format! Phone should contain only digits/spaces." );
                     }
                     break;
 
@@ -162,10 +177,10 @@ public class Tester extends User {
                         if (searchDAO.isValidMonth(month)) {
                             results = searchDAO.searchByNameAndBirthMonth(name, month);
                         } else {
-                            System.out.println(ConsoleUI.RED + "Invalid month! Please enter between 1-12." + ConsoleUI.RESET);
+                            System.out.println("Invalid month! Please enter between 1-12.");
                         }
                     } catch (NumberFormatException e) {
-                        System.out.println(ConsoleUI.RED + "Invalid input! Please enter a number for month." + ConsoleUI.RESET);
+                        System.out.println("Invalid input! Please enter a number for month.");
                     }
                     break;
 
@@ -199,9 +214,9 @@ public class Tester extends User {
             //
             if (results != null) {
                 if (results.isEmpty()) {
-                    System.out.println(ConsoleUI.RED + "No contacts found matching criteria." + ConsoleUI.RESET);
+                    System.out.println("No contacts found matching criteria.");
                 } else {
-                    System.out.println(ConsoleUI.GREEN + "Found " + results.size() + " record(s):" + ConsoleUI.RESET);
+                    System.out.println("Found " + results.size() + " record(s):");
                     printSearchResults(results);
                 }
                 ConsoleUI.pause();

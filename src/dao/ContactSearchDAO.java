@@ -156,7 +156,7 @@ public class ContactSearchDAO {
         return results;
     }
 
-   
+
 
     public boolean isValidPhoneNumber(String phone) {
         return phone.matches("[0-9\\+\\-\\s]*");
