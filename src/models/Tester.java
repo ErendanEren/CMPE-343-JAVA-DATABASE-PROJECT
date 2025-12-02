@@ -217,7 +217,48 @@ public class Tester extends User {
         }
     }
 
+    /**
+     *Iterates over the SQL{@code ResultSet} and displays the contact information in a format of table.
+     *<p>
+     *The main purpose of this helper is to be used in listing and sorting operations.
+     *It prints the following columns: <b>ID, First Name, Last Name, Phone, and Email</b>.
+     *</p>
+     *<p>
+     *The method handles iteration internally and catches any {@link SQLException} errors
+     *which can occur during data retrieval.
+     *</p>
+     *
+     *@param rs The {@link ResultSet} object obtained from executing a SQL query.
+     *If {@code null} or empty, appropriate messages are displayed.
+     * @author Arda Dülger
+     */
     private void printResultSetTable(ResultSet rs) {
+        try {
+            System.out.println("-------------------------------------------------------------------------");
+            System.out.printf("%-5s %-15s %-15s %-15s %-20s\n", "ID", "First Name", "Last Name", "Phone", "Email");
+            System.out.println("-------------------------------------------------------------------------");
+
+            boolean found = false;
+            while (rs.next()) {
+                found = true;
+                int id = rs.getInt("contact_id");
+                String name = rs.getString("first_name");
+                String surname = rs.getString("last_name");
+                String phone = rs.getString("phone_primary");
+                String email = rs.getString("email");
+
+                System.out.printf("%-5d %-15s %-15s %-15s %-20s\n", id, name, surname, phone, email);
+            }
+
+            if (!found) {
+                System.out.println("No records found.");
+            }
+            System.out.println("-------------------------------------------------------------------------");
+            ConsoleUI.pause();
+
+        } catch (SQLException e) {
+            ConsoleUI.printError("Error printing table: " + e.getMessage());
+        }
     }
 
     /**
