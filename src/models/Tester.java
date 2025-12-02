@@ -1,6 +1,12 @@
 package models;
 
+import Database.DatabaseConnection;
 import util.ConsoleUI;
+
+import java.security.MessageDigest;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Scanner;
 import dao.ContactSearchDAO;
 import java.sql.Connection;
@@ -95,16 +101,83 @@ public class Tester extends User {
     }
 
 
+    private String hashPassword(String plainPassword) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(plainPassword.getBytes("UTF-8"));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception ex) {
+            throw new RuntimeException("Hashing error", ex);
+        }
+    }
+
     protected void changePassword(Scanner scanner) {
         ConsoleUI.clearConsole();
-        System.out.println("Change password (Tester)...");
-        ConsoleUI.pause();
+        System.out.println(ConsoleUI.YELLOW_BOLD + "=== Change Password ===" + ConsoleUI.RESET);
+
+        System.out.print("Enter current password: ");
+        String oldPassInput = scanner.nextLine();
+        String hashedOldPass = hashPassword(oldPassInput);
+
+        if (this.getPassword_hash() != null && !hashedOldPass.equals(this.getPassword_hash()))
+        {
+            ConsoleUI.printError("Incorrect current password!");
+            return;
+        }
+
+        System.out.print("Enter new password: ");
+        String newPass = scanner.nextLine();
+
+        if (newPass.length() < 3)
+        {
+            ConsoleUI.printError("Password is too short!");
+            return;
+        }
+
+        String hashedNewPass = hashPassword(newPass);
+        String sql = "UPDATE users SET password_hash = ? WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, hashedNewPass);
+            ps.setInt(2, this.getUserId());
+
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                this.setPassword_hash(hashedNewPass);
+                ConsoleUI.printInfo("Password updated successfully!");
+            } else {
+                ConsoleUI.printError("Failed to update password.");
+            }
+
+        } catch (SQLException e) {
+            ConsoleUI.printError("Database error: " + e.getMessage());
+        }
     }
 
     protected void listAllContacts(Scanner scanner) {
-        ConsoleUI.clearConsole();
-        System.out.println("List all contacts (Tester)...");
-        ConsoleUI.pause();
+        System.out.println("\n--- LIST ALL CONTACTS ---");
+        String sql = "SELECT * FROM contacts";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            printResultSetTable(rs);
+
+        } catch (SQLException e) {
+            ConsoleUI.printError("Database error: " + e.getMessage());
+        }
+    }
+
+    private void printResultSetTable(ResultSet rs) {
     }
 
     /**
@@ -249,7 +322,46 @@ public class Tester extends User {
     }
     protected void sortContacts(Scanner scanner) {
         ConsoleUI.clearConsole();
-        System.out.println("Sort contacts (Tester)...");
-        ConsoleUI.pause();
+        System.out.println(ConsoleUI.YELLOW_BOLD + "=== Sort Contacts ===" + ConsoleUI.RESET);
+
+        System.out.println("Sort by:");
+        System.out.println("1. First Name");
+        System.out.println("2. Last Name");
+        System.out.println("3. Phone Number");
+        System.out.print("Choice: ");
+        String colChoice = scanner.nextLine().trim();
+
+        String orderByColumn = "first_name";
+        switch (colChoice) {
+            case "1": orderByColumn = "first_name"; break;
+            case "2": orderByColumn = "last_name"; break;
+            case "3": orderByColumn = "phone_primary"; break;
+            default:
+                ConsoleUI.printError("Invalid column! Defaulting to First Name.");
+        }
+
+        System.out.println("Direction:");
+        System.out.println("1. Ascending (A-Z)");
+        System.out.println("2. Descending (Z-A)");
+        System.out.print("Choice: ");
+        String dirChoice = scanner.nextLine().trim();
+
+        String direction = "ASC";
+        if (dirChoice.equals("2")) {
+            direction = "DESC";
+        }
+
+        String sql = "SELECT * FROM contacts ORDER BY " + orderByColumn + " " + direction;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            System.out.println("Sorting by " + orderByColumn + " (" + direction + ")...");
+            printResultSetTable(rs);
+
+        } catch (SQLException e) {
+            ConsoleUI.printError("Database error: " + e.getMessage());
+        }
     }
 }
