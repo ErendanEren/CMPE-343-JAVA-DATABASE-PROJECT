@@ -16,7 +16,7 @@ import java.sql.SQLException;
  * Testers are allowed list, search, and sort contacts but cannot add, update, or delete them.
  * Uses {@link ContactSearchDAO} to perform database searches securely
  * </p>
- * @author Arda Dulger
+ * @author Arda Dülger
  */
 
 public class Tester extends User {
