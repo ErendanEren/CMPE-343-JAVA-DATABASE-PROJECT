@@ -26,7 +26,7 @@ public class Junior extends Tester {
     }
 
     public Junior(int userId, String username, String name, String surname, Connection connection) {
-        super(userId, username, name, surname, connection);
+        super(userId, username, name, surname);
         this.setRole("Junior Developer");
     }
 
