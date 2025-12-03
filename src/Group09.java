@@ -2,6 +2,7 @@
 import Database.DatabaseConnection;
 import models.User;
 import util.ConsoleUI;
+import java.sql.*;
 
 import java.util.Scanner;
 
