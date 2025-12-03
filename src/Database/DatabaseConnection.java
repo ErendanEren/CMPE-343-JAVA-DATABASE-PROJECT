@@ -1,4 +1,4 @@
-package Database; // or `database` if you rename the package
+package Database;
 
 import models.User;
 import models.Manager;
@@ -6,31 +6,25 @@ import models.Senior;
 import models.Junior;
 import models.Tester;
 
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Locale;
 
 public class DatabaseConnection {
 
     // ==== MySQL settings ====
-    // Must match your MySQL configuration
-    private static final String DATABASE_NAME = "group09_db";
-    private static final String DATABASE_USER = "myuser";
-    private static final String DATABASE_PASSWORD = "1234";
+    private static final String DATABASE_NAME = "group09_db";  // MySQL'deki DB ismin
+    private static final String DATABASE_USER = "myuser";      // MySQL kullanıcı adın
+    private static final String DATABASE_PASSWORD = "1234";    // MySQL şifren
 
     private static final String CONNECTION_STRING =
             "jdbc:mysql://localhost:3306/" + DATABASE_NAME +
                     "?useSSL=false&allowPublicKeyRetrieval=true" +
                     "&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8";
 
-    // Re-used connection (simple singleton style)
+    // ==== basit singleton ====
     private static Connection connection;
 
-    // ==== Open / get connection ====
+    // ==== Connection get ====
     public static Connection getConnection() throws SQLException {
         if (connection == null || connection.isClosed()) {
             connection = DriverManager.getConnection(
@@ -42,7 +36,7 @@ public class DatabaseConnection {
         return connection;
     }
 
-    // ==== Close connection ====
+    // ==== Connection close ====
     public static void closeConnection() {
         if (connection != null) {
             try {
@@ -55,8 +49,7 @@ public class DatabaseConnection {
     }
 
     // ==== LOGIN ====
-    // Tries to log in with username + password.
-    // Returns the correct User subclass (Manager / Senior / Junior / Tester) or null if failed.
+
     public static User login(String username, String password) {
         String sql =
                 "SELECT user_id, username, password_hash, name, surname, role, " +
@@ -68,11 +61,11 @@ public class DatabaseConnection {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, username);
-            ps.setString(2, password);  // currently plain text "1234" in DB
+            ps.setString(2, password);  // şimdilik plaintext, DB’de de öyle
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
-                    // No user found
+                    // kullanıcı yok
                     return null;
                 }
 
@@ -85,7 +78,6 @@ public class DatabaseConnection {
                 Date createdAt = rs.getDate("created_at");
                 Date updatedAt = rs.getDate("updated_at");
 
-                // Create correct subclass based on role from DB
                 User user = createUserByRole(role);
                 if (user == null) {
                     System.err.println("Unknown role in DB: " + role);
@@ -110,7 +102,6 @@ public class DatabaseConnection {
         }
     }
 
-    // ==== Helper: map role string to correct subclass ====
     private static User createUserByRole(String role) {
         if (role == null) return null;
 
@@ -118,26 +109,10 @@ public class DatabaseConnection {
 
         return switch (normalized) {
             case "TESTER" -> new Tester();
-            case "JUNIOR DEVELOPER" -> new Junior();
-            case "SENIOR DEVELOPER" -> new Senior();
+            case "JUNIOR", "JUNIOR DEVELOPER" -> new Junior();
+            case "SENIOR", "SENIOR DEVELOPER" -> new Senior();
             case "MANAGER" -> new Manager();
             default -> null;
         };
-    }
-
-    // Optional: small test
-    public static void main(String[] args) {
-        try (Connection conn = getConnection()) {
-            System.out.println("Connection OK: " + !conn.isClosed());
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        User u = login("man", "1234");
-        if (u != null) {
-            System.out.println("Login OK: " + u.getUsername() + " - " + u.getRole());
-        } else {
-            System.out.println("Login failed");
-        }
     }
 }
