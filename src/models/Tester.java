@@ -20,15 +20,14 @@ import java.util.Scanner;
  * meaning they can list, search, and sort contacts but cannot modify them.
  * However, they retain the ability to update their own passwords.
  * </p>
- * * <h3>Key Responsibilities:</h3>
+ * <h3>Key Responsibilities:</h3>
  * <ul>
  * <li>Listing all contacts in a formatted table.</li>
  * <li>Sorting contacts dynamically by columns.</li>
  * <li>Changing their own account password securely.</li>
  * <li>Searching contacts via {@link ContactSearchDAO}.</li>
  * </ul>
- * * @author Arda Dulger
- * @author selcukaloba
+ * @author Selcuk Aloba, Arda Dulger
  */
 public class Tester extends User {
 
@@ -37,7 +36,6 @@ public class Tester extends User {
     public Tester() {
         super();
         this.setRole("Tester");
-        // DAO artık kendi içinde connection açıyor
         this.searchDAO = new ContactSearchDAO();
     }
 
@@ -186,7 +184,21 @@ public class Tester extends User {
             ConsoleUI.printError("Database error: " + e.getMessage());
         }
     }
-
+    /**
+     *Iterates over the SQL{@code ResultSet} and displays the contact information in a format of table.
+     *<p>
+     *The main purpose of this helper is to be used in listing and sorting operations.
+     *It prints the following columns: <b>ID, First Name, Last Name, Phone, and Email</b>.
+     *</p>
+     *<p>
+     *The method handles iteration internally and catches any {@link SQLException} errors
+     *which can occur during data retrieval.
+     *</p>
+     *
+     *@param rs The {@link ResultSet} object obtained from executing a SQL query.
+     *If {@code null} or empty, appropriate messages are displayed.
+     * @author Arda Dülger
+     */
     private void printResultSetTable(ResultSet rs) {
         try {
             System.out.println("-------------------------------------------------------------------------");
@@ -218,7 +230,22 @@ public class Tester extends User {
         }
     }
 
-    // ===================== SEARCH =====================
+    /**
+     * Performs various person search operations and allows viewing the search sub-menu.
+     * <p>
+     * This method allows users to perform searches without having to return to the main menu.
+     * Two types of search criteria can be specified.
+     * <ul>
+     * <li><b>Single-Field Search:</b> Search by First Name, Last Name, or Phone Number.</li>
+     * <li><b>Multi-Field Search:</b> Advanced search combinations (e.g., Name + Birth Month).</li>
+     * </ul>
+     * </p>
+     * <p>
+     * Before sending a query to the database via Dao, it performs <b>input validation</b>
+     * For example, checking if the entered month is between 1-12 or if the entered phone number is a digit.
+     * @param scanner {@code Scanner } object is used to receive input.
+     * @author Arda Dulger
+     */
 
     protected void searchContacts(Scanner scanner) {
         boolean searching = true;
@@ -304,7 +331,16 @@ public class Tester extends User {
             }
         }
     }
-
+    /**
+     * Prints the list of found people in tabular form.
+     * <p>
+     * This helper allows to iterate and display the contact list.
+     * key attributes (ID, Name, Surname, Phone, Email) in arranged columns using {@code printf}.
+     * </p>
+     * @param contacts A {@code List} of {@link Contact} objects retrieved from the database.
+     * If the list empty, it will be not printed.(handled by caller)
+     * @author Arda Dulger
+     */
     private void printSearchResults(List<Contact> contacts) {
         System.out.println("----------------------------------------------------------------------------------------------");
         System.out.printf("%-5s %-15s %-15s %-15s %-20s %-25s\n",
@@ -321,6 +357,7 @@ public class Tester extends User {
         }
         System.out.println("----------------------------------------------------------------------------------------------");
     }
+
     /**
      * Sorts and displays contacts based on user-selected criteria.
      * <p>
