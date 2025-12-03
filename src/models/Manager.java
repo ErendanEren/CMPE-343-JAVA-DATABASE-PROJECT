@@ -12,8 +12,8 @@ import java.util.Stack;
  * Represents the Manager role in the Contact Management System.
  * <p>
  * This class provides administrative functionalities such as adding, updating,
- * and deleting users, as well as viewing system statistics.
- * It also implements a session-based undo mechanism using a Stack.
+ * and deleting users. It creates advanced statistical reports about the contacts
+ * (age analytics, name frequencies) and implements a session-based undo mechanism.
  * </p>
  *
  * @author Zafer Mert Serinken
@@ -396,8 +396,8 @@ public class Manager extends User {
     /**
      * Displays comprehensive statistical information about the contacts.
      * <p>
-     * Provides analytics such as total count, LinkedIn usage, average age,
-     * and identifies the youngest/oldest contacts in the directory.
+     * Provides analytics such as total count, age statistics (average, youngest, oldest),
+     * and identifies the most frequently occurring first and last names.
      * </p>
      *
      * @author Zafer Mert Serinken
@@ -408,31 +408,36 @@ public class Manager extends User {
 
         // 1. Temel Sayılar
         String sqlTotal = "SELECT COUNT(*) as total FROM contacts";
-        String sqlLinkedin = "SELECT COUNT(*) as linked FROM contacts WHERE linkedin_url IS NOT NULL AND linkedin_url != ''";
 
         // 2. Yaş Analizleri (MySQL Fonksiyonları)
         String sqlAvgAge = "SELECT AVG(TIMESTAMPDIFF(YEAR, birth_date, CURDATE())) as avg_age FROM contacts WHERE birth_date IS NOT NULL";
         String sqlYoungest = "SELECT first_name, last_name, birth_date FROM contacts WHERE birth_date IS NOT NULL ORDER BY birth_date DESC LIMIT 1";
         String sqlOldest = "SELECT first_name, last_name, birth_date FROM contacts WHERE birth_date IS NOT NULL ORDER BY birth_date ASC LIMIT 1";
 
+        // 3. İsim Paylaşımı (En sık tekrarlanan isimler)
+        String sqlMostSharedName = "SELECT first_name, COUNT(*) as cnt FROM contacts GROUP BY first_name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
+        String sqlMostSharedSurname = "SELECT last_name, COUNT(*) as cnt FROM contacts GROUP BY last_name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
+
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement()) {
 
+            // --- Toplam Kişi ---
             ResultSet rs = stmt.executeQuery(sqlTotal);
             if (rs.next()) System.out.println("Total Contacts: " + ConsoleUI.CYAN_BOLD + rs.getInt("total") + ConsoleUI.RESET);
             rs.close();
 
-            rs = stmt.executeQuery(sqlLinkedin);
-            if (rs.next()) System.out.println("With LinkedIn: " + ConsoleUI.CYAN_BOLD + rs.getInt("linked") + ConsoleUI.RESET);
-            rs.close();
-
             System.out.println("--------------------------------");
 
-            // Yaş Ortalaması
+            // --- Yaş İstatistikleri ---
             rs = stmt.executeQuery(sqlAvgAge);
             if (rs.next()) {
                 double avg = rs.getDouble("avg_age");
-                System.out.printf("Average Age: " + ConsoleUI.YELLOW_BOLD + "%.1f years" + ConsoleUI.RESET + "%n", avg);
+                // Eğer veri yoksa (null dönerse) 0 göster
+                if (!rs.wasNull()) {
+                    System.out.printf("Average Age: " + ConsoleUI.YELLOW_BOLD + "%.1f years" + ConsoleUI.RESET + "%n", avg);
+                } else {
+                    System.out.println("Average Age: N/A (No birth dates)");
+                }
             }
             rs.close();
 
@@ -451,6 +456,29 @@ public class Manager extends User {
                 System.out.println("Oldest Contact:   " + ConsoleUI.RED_BOLD +
                         rs.getString("first_name") + " " + rs.getString("last_name") +
                         " (" + rs.getDate("birth_date") + ")" + ConsoleUI.RESET);
+            }
+            rs.close();
+
+            System.out.println("--------------------------------");
+
+            // --- İsim Paylaşımı Analizi ---
+            // En çok kullanılan İsim
+            rs = stmt.executeQuery(sqlMostSharedName);
+            if (rs.next()) {
+                System.out.println("Most Shared Name: " + ConsoleUI.CYAN_BOLD + rs.getString("first_name") +
+                        ConsoleUI.RESET + " (Shared by " + rs.getInt("cnt") + " individuals)");
+            } else {
+                System.out.println("Most Shared Name: None (All unique)");
+            }
+            rs.close();
+
+            // En çok kullanılan Soyisim
+            rs = stmt.executeQuery(sqlMostSharedSurname);
+            if (rs.next()) {
+                System.out.println("Most Shared Surname: " + ConsoleUI.CYAN_BOLD + rs.getString("last_name") +
+                        ConsoleUI.RESET + " (Shared by " + rs.getInt("cnt") + " individuals)");
+            } else {
+                System.out.println("Most Shared Surname: None (All unique)");
             }
             rs.close();
 
