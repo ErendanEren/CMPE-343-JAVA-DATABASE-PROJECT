@@ -3,6 +3,7 @@ package models;
 import Database.DatabaseConnection;
 import dao.ContactSearchDAO;
 import util.ConsoleUI;
+import java.sql.Date;
 
 import java.security.MessageDigest;
 import java.sql.Connection;
@@ -171,7 +172,9 @@ public class Tester extends User {
      * @author selcukaloba
      */
     protected void listAllContacts(Scanner scanner) {
-        System.out.println("\n--- LIST ALL CONTACTS ---");
+        ConsoleUI.clearConsole();
+        System.out.println(ConsoleUI.YELLOW_BOLD + "=== List All Contacts ===" + ConsoleUI.RESET);
+
         String sql = "SELECT * FROM contacts";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -183,6 +186,8 @@ public class Tester extends User {
         } catch (SQLException e) {
             ConsoleUI.printError("Database error: " + e.getMessage());
         }
+
+        ConsoleUI.pause();
     }
     /**
      *Iterates over the SQL{@code ResultSet} and displays the contact information in a format of table.
@@ -201,29 +206,46 @@ public class Tester extends User {
      */
     private void printResultSetTable(ResultSet rs) {
         try {
-            System.out.println("-------------------------------------------------------------------------");
-            System.out.printf("%-5s %-15s %-15s %-15s %-20s\n",
-                    "ID", "First Name", "Last Name", "Phone", "Address","Email","Birth Date", "Created_At", "Updated_At");
-            System.out.println("-------------------------------------------------------------------------");
+            String line = "--------------------------------------------------------------------------------------------------------------";
+
+            // Üst çizgi
+            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
+
+            // Başlık – Search ekranındakiyle AYNI
+            System.out.printf(
+                    ConsoleUI.YELLOW_BOLD +
+                            "%-4s %-15s %-15s %-15s %-12s %-35s %-25s%n" +
+                            ConsoleUI.RESET,
+                    "ID", "First Name", "Last Name", "Phone", "Birthdate", "Address", "Email"
+            );
+
+            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
 
             boolean found = false;
             while (rs.next()) {
                 found = true;
-                int id = rs.getInt("contact_id");
-                String name = rs.getString("first_name");
-                String surname = rs.getString("last_name");
-                String phone = rs.getString("phone_primary");
-                String email = rs.getString("email");
 
-                System.out.printf("%-5d %-15s %-15s %-15s %-20s\n",
-                        id, name, surname, phone, email);
+                int id          = rs.getInt("contact_id");
+                String name     = rs.getString("first_name");
+                String surname  = rs.getString("last_name");
+                String phone    = rs.getString("phone_primary");
+                Date birth      = rs.getDate("birthdate");
+                String address  = rs.getString("address");
+                String email    = rs.getString("email");
+
+                String birthStr = (birth == null) ? "-" : birth.toString();
+
+                System.out.printf(
+                        "%-4d %-15s %-15s %-15s %-12s %-35s %-25s%n",
+                        id, name, surname, phone, birthStr, address, email
+                );
             }
 
             if (!found) {
-                System.out.println("No records found.");
+                System.out.println(ConsoleUI.RED_BOLD + "No records found." + ConsoleUI.RESET);
             }
-            System.out.println("-------------------------------------------------------------------------");
-            ConsoleUI.pause();
+
+            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
 
         } catch (SQLException e) {
             ConsoleUI.printError("Error printing table: " + e.getMessage());
@@ -342,20 +364,37 @@ public class Tester extends User {
      * @author Arda Dulger
      */
     private void printSearchResults(List<Contact> contacts) {
-        System.out.println("----------------------------------------------------------------------------------------------");
-        System.out.printf("%-5s %-15s %-15s %-15s %-20s %-25s\n",
-                "ID", "First Name", "Last Name", "Phone", "Address", "Email");
-        System.out.println("----------------------------------------------------------------------------------------------");
-        for (Contact c : contacts) {
-            System.out.printf("%-5d %-15s %-15s %-15s %-20s %-25s\n",
-                    c.getContactId(),
-                    c.getName(),
-                    c.getSurname(),
-                    c.getPrimaryPhone(),
-                    c.getAddress(),
-                    c.getEmail());
+        String line = "--------------------------------------------------------------------------------------------------------------";
+
+        System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
+        System.out.printf(
+                ConsoleUI.YELLOW_BOLD +
+                        "%-4s %-15s %-15s %-15s %-12s %-35s %-25s%n" +
+                        ConsoleUI.RESET,
+                "ID", "First Name", "Last Name", "Phone", "Birthdate", "Address", "Email"
+        );
+        System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
+
+        if (contacts.isEmpty()) {
+            System.out.println(ConsoleUI.RED_BOLD + "No records found." + ConsoleUI.RESET);
+        } else {
+            for (Contact c : contacts) {
+                String birthStr = (c.getBirthdate() == null) ? "-" : c.getBirthdate().toString();
+
+                System.out.printf(
+                        "%-4d %-15s %-15s %-15s %-12s %-35s %-25s%n",
+                        c.getContactId(),
+                        c.getName(),
+                        c.getSurname(),
+                        c.getPrimaryPhone(),
+                        birthStr,
+                        c.getAddress(),
+                        c.getEmail()
+                );
+            }
         }
-        System.out.println("----------------------------------------------------------------------------------------------");
+
+        System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
     }
 
     /**
