@@ -115,7 +115,6 @@ public class ConsoleUI {
     public static void printInvalidChoice() {
         System.out.println();
         System.out.println(RED_BOLD + "Invalid choice. Please try again." + RESET);
-        pause();
     }
 
     public static void printLoginBox() {
