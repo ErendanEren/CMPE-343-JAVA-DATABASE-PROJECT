@@ -1,6 +1,8 @@
 package dao;
 
+import Database.DatabaseConnection;
 import models.Contact;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,37 +12,39 @@ import java.time.format.DateTimeParseException;
 
 public class ContactSearchDAO {
 
-    private Connection connection;
-
-    public ContactSearchDAO(Connection connection) {
-        this.connection = connection;
+    // Boş constructor – Tester buradan new ContactSearchDAO() diye kullanacak
+    public ContactSearchDAO() {
+        // Burada Connection field YOK, her metot kendi connection'unu açıyor
     }
 
-
+    // === ResultSet -> Contact listesine çevir ===
     private List<Contact> mapResultSetToContacts(ResultSet rs) throws SQLException {
         List<Contact> contacts = new ArrayList<>();
         while (rs.next()) {
-
             int id = rs.getInt("contact_id");
-            String name = rs.getString("first_name");
-            String surname = rs.getString("last_name");
-            String phone = rs.getString("phone_primary");
-            String email = rs.getString("email");
-            String address = rs.getString("address");
+            String firstName = rs.getString("first_name");
+            String lastName  = rs.getString("last_name");
+            String nickname  = rs.getString("nickname");
+            String phone     = rs.getString("phone_primary");
+            String email     = rs.getString("email");
+            String address   = rs.getString("address");
+            String company   = rs.getString("company");
 
+            Timestamp createdTs = rs.getTimestamp("created_at");
+            Timestamp updatedTs = rs.getTimestamp("updated_at");
 
             Contact contact = new Contact(
                     id,
-                    0,
-                    name,
-                    surname,
-                    null,
+                    0,                // userId (şimdilik kullanmıyorsun)
+                    firstName,
+                    lastName,
+                    nickname,
                     phone,
                     email,
                     address,
-                    null,
-                    null,
-                    null
+                    company,
+                    createdTs != null ? new java.sql.Date(createdTs.getTime()) : null,
+                    updatedTs != null ? new java.sql.Date(updatedTs.getTime()) : null
             );
 
             contacts.add(contact);
@@ -48,14 +52,16 @@ public class ContactSearchDAO {
         return contacts;
     }
 
-
-
+    // === 1) First name ile arama ===
     public List<Contact> searchByFirstName(String query) {
         List<Contact> results = new ArrayList<>();
-
         String sql = "SELECT * FROM contacts WHERE first_name LIKE ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, "%" + query + "%");
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setString(1,query + "%");
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 results = mapResultSetToContacts(rs);
             }
@@ -65,11 +71,16 @@ public class ContactSearchDAO {
         return results;
     }
 
+    // === 2) Last name ile arama ===
     public List<Contact> searchByLastName(String query) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE last_name LIKE ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, "%" + query + "%");
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setString(1,  query + "%");
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 results = mapResultSetToContacts(rs);
             }
@@ -79,11 +90,16 @@ public class ContactSearchDAO {
         return results;
     }
 
+    // === 3) Telefon ile arama ===
     public List<Contact> searchByPhoneNumber(String query) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE phone_primary LIKE ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
             pstmt.setString(1, "%" + query + "%");
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 results = mapResultSetToContacts(rs);
             }
@@ -93,13 +109,17 @@ public class ContactSearchDAO {
         return results;
     }
 
-
+    // === 4) Lastname + City/Address ===
     public List<Contact> searchByLastnameAndCity(String lastname, String city) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE last_name LIKE ? AND address LIKE ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
             pstmt.setString(1, "%" + lastname + "%");
             pstmt.setString(2, "%" + city + "%");
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 results = mapResultSetToContacts(rs);
             }
@@ -109,15 +129,23 @@ public class ContactSearchDAO {
         return results;
     }
 
-
+    // === 5) Name + Birth month ===
+    // UYARI: contacts tablosunda birth_date yoksa bu fonksiyon hata verir.
+    // Şimdilik menüde 4. seçeneği kullanmazsan sorun olmaz.
     public List<Contact> searchByNameAndBirthMonth(String name, int month) {
         List<Contact> results = new ArrayList<>();
 
-        String sql = "SELECT * FROM contacts WHERE (first_name LIKE ? OR last_name LIKE ?) AND MONTH(birth_date) = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        String sql = "SELECT * FROM contacts " +
+                "WHERE (first_name LIKE ? OR last_name LIKE ?) " +
+                "AND MONTH(birth_date) = ?";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
             pstmt.setString(1, "%" + name + "%");
             pstmt.setString(2, "%" + name + "%");
             pstmt.setInt(3, month);
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 results = mapResultSetToContacts(rs);
             }
@@ -127,13 +155,17 @@ public class ContactSearchDAO {
         return results;
     }
 
-
+    // === 6) Telefon parçası + email parçası ===
     public List<Contact> searchByPhonePartAndEmailPart(String phonePart, String emailPart) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE phone_primary LIKE ? AND email LIKE ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
             pstmt.setString(1, "%" + phonePart + "%");
             pstmt.setString(2, "%" + emailPart + "%");
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 results = mapResultSetToContacts(rs);
             }
@@ -143,12 +175,15 @@ public class ContactSearchDAO {
         return results;
     }
 
-
+    // === 7) Tüm contact'lar ===
     public List<Contact> getAllContacts() {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts";
-        try (Statement stmt = connection.createStatement();
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
+
             results = mapResultSetToContacts(rs);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -156,8 +191,7 @@ public class ContactSearchDAO {
         return results;
     }
 
-
-
+    // === Validation helper'lar ===
     public boolean isValidPhoneNumber(String phone) {
         return phone.matches("[0-9\\+\\-\\s]*");
     }
