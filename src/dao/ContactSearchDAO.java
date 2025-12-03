@@ -28,25 +28,26 @@ public class ContactSearchDAO {
             String phone     = rs.getString("phone_primary");
             String email     = rs.getString("email");
             String address   = rs.getString("address");
-            String company   = rs.getString("company");
+            java.sql.Date birthdate = rs.getDate("birthdate");
 
             Timestamp createdTs = rs.getTimestamp("created_at");
             Timestamp updatedTs = rs.getTimestamp("updated_at");
 
             Contact contact = new Contact(
                     id,
-                    0,                // userId (şimdilik kullanmıyorsun)
+                    0,
                     firstName,
                     lastName,
                     nickname,
                     phone,
+                    birthdate,
                     email,
                     address,
-                    company,
                     createdTs != null ? new java.sql.Date(createdTs.getTime()) : null,
                     updatedTs != null ? new java.sql.Date(updatedTs.getTime()) : null
             );
 
+            contact.setBirthdate(birthdate);
             contacts.add(contact);
         }
         return contacts;
@@ -135,9 +136,10 @@ public class ContactSearchDAO {
     public List<Contact> searchByNameAndBirthMonth(String name, int month) {
         List<Contact> results = new ArrayList<>();
 
-        String sql = "SELECT * FROM contacts " +
-                "WHERE (first_name LIKE ? OR last_name LIKE ?) " +
-                "AND MONTH(birth_date) = ?";
+        String sql =
+                "SELECT * FROM contacts " +
+                        "WHERE (first_name LIKE ? OR last_name LIKE ?) " +
+                        "AND MONTH(birth_date) = ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {

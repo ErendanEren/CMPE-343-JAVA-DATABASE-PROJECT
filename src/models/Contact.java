@@ -11,22 +11,19 @@ public class Contact {
     private String surname;
     private String nickname;
     private String primaryPhone;
+    private Date birthdate;
     private String email;
     private String address;
-    private String company;
 
     private Date created_at;
     private Date updated_at;
 
     // ====== CONSTRUCTORS ======
-    public Contact() {
-    }
 
     public Contact(int contactId, int userId,
                    String name, String surname, String nickname,
-                   String phone, String email,
-                   String address, String company,
-                   Date created_at, Date updated_at) {
+                   String phone, Date birthdate, String email,
+                   String address, Date created_at, Date updated_at) {
 
         this.contactId = contactId;
         this.userId = userId;
@@ -34,9 +31,9 @@ public class Contact {
         this.surname = surname;
         this.nickname = nickname;
         this.primaryPhone = phone;
+        this.birthdate = birthdate;
         this.email = email;
         this.address = address;
-        this.company = company;
         this.created_at = created_at;
         this.updated_at = updated_at;
     }
@@ -82,6 +79,10 @@ public class Contact {
         this.primaryPhone = primaryPhone;
     }
 
+    public Date getBirthdate() {return birthdate;}
+
+    public void setBirthdate(Date birthdate) {this.birthdate = birthdate;}
+
     public String getEmail() {
         return email;
     }
@@ -96,14 +97,6 @@ public class Contact {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public String getCompany() {
-        return company;
-    }
-
-    public void setCompany(String company) {
-        this.company = company;
     }
 
     public Date getCreated_at() {
@@ -133,7 +126,7 @@ public class Contact {
                 ", nickname='" + nickname + '\'' +
                 ", phone='" + primaryPhone + '\'' +
                 ", email='" + email + '\'' +
-                ", company='" + company + '\'' +
+                ", birthdate='" + birthdate + '\'' +
                 '}';
     }
 }
