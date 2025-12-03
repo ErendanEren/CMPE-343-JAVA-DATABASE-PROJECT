@@ -20,13 +20,15 @@ import java.util.Scanner;
  * meaning they can list, search, and sort contacts but cannot modify them.
  * However, they retain the ability to update their own passwords.
  * </p>
- * <h3>Key Responsibilities:</h3>
+ * * <h3>Key Responsibilities:</h3>
  * <ul>
  * <li>Listing all contacts in a formatted table.</li>
  * <li>Sorting contacts dynamically by columns.</li>
  * <li>Changing their own account password securely.</li>
  * <li>Searching contacts via {@link ContactSearchDAO}.</li>
  * </ul>
+ * * @author Arda Dulger
+ * @author selcukaloba
  */
 public class Tester extends User {
 
@@ -79,8 +81,17 @@ public class Tester extends User {
             }
         }
     }
-
-    // ===================== PASSWORD =====================
+    /**
+     * Helper method to hash passwords using SHA-256 algorithm.
+     * <p>
+     * This ensures that passwords are never stored or compared in plain text,
+     * adhering to security best practices.
+     * </p>
+     * * @param plainPassword The plain text password entered by the user.
+     * @return The hexadecimal string representation of the hashed password.
+     * @throws RuntimeException If the SHA-256 algorithm is not available in the environment.
+     * @author selcukaloba
+     */
 
     private String hashPassword(String plainPassword) {
         try {
@@ -97,7 +108,19 @@ public class Tester extends User {
             throw new RuntimeException("Hashing error", ex);
         }
     }
-
+    /**
+     * Allows the Tester to change their own password.
+     * <p>
+     * This method performs several security checks:
+     * <ul>
+     * <li>Verifies the old password by hashing the input and comparing it with the stored hash.</li>
+     * <li>Enforces a minimum password length.</li>
+     * <li>Updates the password in the database securely using hashing.</li>
+     * </ul>
+     * </p>
+     * * @param scanner The {@link Scanner} object to receive password inputs.
+     * @author selcukaloba
+     */
     protected void changePassword(Scanner scanner) {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.YELLOW_BOLD + "=== Change Password ===" + ConsoleUI.RESET);
@@ -140,9 +163,15 @@ public class Tester extends User {
             ConsoleUI.printError("Database error: " + e.getMessage());
         }
     }
-
-    // ===================== LIST / TABLE PRINT =====================
-
+    /**
+     * Retrieves and lists all contacts from the database.
+     * <p>
+     * Executes a {@code SELECT * FROM contacts} query and displays the results
+     * in a tabular format using the helper method {@link #printResultSetTable(ResultSet)}.
+     * </p>
+     * * @param scanner The {@link Scanner} object (used for pausing the screen).
+     * @author selcukaloba
+     */
     protected void listAllContacts(Scanner scanner) {
         System.out.println("\n--- LIST ALL CONTACTS ---");
         String sql = "SELECT * FROM contacts";
@@ -292,9 +321,17 @@ public class Tester extends User {
         }
         System.out.println("----------------------------------------------------------------------------------------------");
     }
-
-    // ===================== SORT =====================
-
+    /**
+     * Sorts and displays contacts based on user-selected criteria.
+     * <p>
+     * Prompts the user to select a column (First Name, Last Name, or Phone) and
+     * a sorting direction (Ascending or Descending). Constructs a dynamic SQL query
+     * using safe mapping (switch-case) to prevent SQL Injection.
+     * </p>
+     *
+     * @param scanner The {@link Scanner} object to read user input for column and direction.
+     * @author selcukaloba
+     */
     protected void sortContacts(Scanner scanner) {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.YELLOW_BOLD + "=== Sort Contacts ===" + ConsoleUI.RESET);
