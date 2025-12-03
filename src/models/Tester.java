@@ -28,6 +28,7 @@ import java.util.Scanner;
  * <li>Changing their own account password securely.</li>
  * <li>Searching contacts via {@link ContactSearchDAO}.</li>
  * </ul>
+ * @author Selcuk Aloba, Arda Dulger
  */
 public class Tester extends User {
 
@@ -36,7 +37,6 @@ public class Tester extends User {
     public Tester() {
         super();
         this.setRole("Tester");
-        // DAO artık kendi içinde connection açıyor
         this.searchDAO = new ContactSearchDAO();
     }
 
@@ -80,8 +80,17 @@ public class Tester extends User {
             }
         }
     }
-
-    // ===================== PASSWORD =====================
+    /**
+     * Helper method to hash passwords using SHA-256 algorithm.
+     * <p>
+     * This ensures that passwords are never stored or compared in plain text,
+     * adhering to security best practices.
+     * </p>
+     * * @param plainPassword The plain text password entered by the user.
+     * @return The hexadecimal string representation of the hashed password.
+     * @throws RuntimeException If the SHA-256 algorithm is not available in the environment.
+     * @author selcukaloba
+     */
 
     private String hashPassword(String plainPassword) {
         try {
@@ -98,7 +107,19 @@ public class Tester extends User {
             throw new RuntimeException("Hashing error", ex);
         }
     }
-
+    /**
+     * Allows the Tester to change their own password.
+     * <p>
+     * This method performs several security checks:
+     * <ul>
+     * <li>Verifies the old password by hashing the input and comparing it with the stored hash.</li>
+     * <li>Enforces a minimum password length.</li>
+     * <li>Updates the password in the database securely using hashing.</li>
+     * </ul>
+     * </p>
+     * * @param scanner The {@link Scanner} object to receive password inputs.
+     * @author selcukaloba
+     */
     protected void changePassword(Scanner scanner) {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.YELLOW_BOLD + "=== Change Password ===" + ConsoleUI.RESET);
@@ -141,9 +162,15 @@ public class Tester extends User {
             ConsoleUI.printError("Database error: " + e.getMessage());
         }
     }
-
-    // ===================== LIST / TABLE PRINT =====================
-
+    /**
+     * Retrieves and lists all contacts from the database.
+     * <p>
+     * Executes a {@code SELECT * FROM contacts} query and displays the results
+     * in a tabular format using the helper method {@link #printResultSetTable(ResultSet)}.
+     * </p>
+     * * @param scanner The {@link Scanner} object (used for pausing the screen).
+     * @author selcukaloba
+     */
     protected void listAllContacts(Scanner scanner) {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.YELLOW_BOLD + "=== List All Contacts ===" + ConsoleUI.RESET);
@@ -162,7 +189,21 @@ public class Tester extends User {
 
         ConsoleUI.pause();
     }
-
+    /**
+     *Iterates over the SQL{@code ResultSet} and displays the contact information in a format of table.
+     *<p>
+     *The main purpose of this helper is to be used in listing and sorting operations.
+     *It prints the following columns: <b>ID, First Name, Last Name, Phone, and Email</b>.
+     *</p>
+     *<p>
+     *The method handles iteration internally and catches any {@link SQLException} errors
+     *which can occur during data retrieval.
+     *</p>
+     *
+     *@param rs The {@link ResultSet} object obtained from executing a SQL query.
+     *If {@code null} or empty, appropriate messages are displayed.
+     * @author Arda Dülger
+     */
     private void printResultSetTable(ResultSet rs) {
         try {
             String line = "--------------------------------------------------------------------------------------------------------------";
@@ -211,7 +252,22 @@ public class Tester extends User {
         }
     }
 
-    // ===================== SEARCH =====================
+    /**
+     * Performs various person search operations and allows viewing the search sub-menu.
+     * <p>
+     * This method allows users to perform searches without having to return to the main menu.
+     * Two types of search criteria can be specified.
+     * <ul>
+     * <li><b>Single-Field Search:</b> Search by First Name, Last Name, or Phone Number.</li>
+     * <li><b>Multi-Field Search:</b> Advanced search combinations (e.g., Name + Birth Month).</li>
+     * </ul>
+     * </p>
+     * <p>
+     * Before sending a query to the database via Dao, it performs <b>input validation</b>
+     * For example, checking if the entered month is between 1-12 or if the entered phone number is a digit.
+     * @param scanner {@code Scanner } object is used to receive input.
+     * @author Arda Dulger
+     */
 
     protected void searchContacts(Scanner scanner) {
         boolean searching = true;
@@ -297,7 +353,16 @@ public class Tester extends User {
             }
         }
     }
-
+    /**
+     * Prints the list of found people in tabular form.
+     * <p>
+     * This helper allows to iterate and display the contact list.
+     * key attributes (ID, Name, Surname, Phone, Email) in arranged columns using {@code printf}.
+     * </p>
+     * @param contacts A {@code List} of {@link Contact} objects retrieved from the database.
+     * If the list empty, it will be not printed.(handled by caller)
+     * @author Arda Dulger
+     */
     private void printSearchResults(List<Contact> contacts) {
         String line = "--------------------------------------------------------------------------------------------------------------";
 
@@ -332,9 +397,17 @@ public class Tester extends User {
         System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
     }
 
-
-    // ===================== SORT =====================
-
+    /**
+     * Sorts and displays contacts based on user-selected criteria.
+     * <p>
+     * Prompts the user to select a column (First Name, Last Name, or Phone) and
+     * a sorting direction (Ascending or Descending). Constructs a dynamic SQL query
+     * using safe mapping (switch-case) to prevent SQL Injection.
+     * </p>
+     *
+     * @param scanner The {@link Scanner} object to read user input for column and direction.
+     * @author selcukaloba
+     */
     protected void sortContacts(Scanner scanner) {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.YELLOW_BOLD + "=== Sort Contacts ===" + ConsoleUI.RESET);
