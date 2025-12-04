@@ -400,13 +400,20 @@ public class Tester extends User {
     /**
      * Sorts and displays contacts based on user-selected criteria.
      * <p>
-     * Prompts the user to select a column (First Name, Last Name, or Phone) and
-     * a sorting direction (Ascending or Descending). Constructs a dynamic SQL query
-     * using safe mapping (switch-case) to prevent SQL Injection.
+     * Prompts the user to select a column:
+     * <ul>
+     * <li>1. First Name</li>
+     * <li>2. Last Name</li>
+     * <li>3. Phone Number</li>
+     * <li>4. Birth Date (Oldest to Newest or vice versa)</li>
+     * <li>5. City/State (Extracted from Address field)</li>
+     * </ul>
+     * Then prompts for direction (Ascending/Descending).
+     * Constructs a dynamic SQL query using safe mapping to prevent SQL Injection.
      * </p>
      *
-     * @param scanner The {@link Scanner} object to read user input for column and direction.
-     * @author selcukaloba
+     * @param scanner The {@link Scanner} object to read user input.
+     * @author Selcuk Aloba
      */
     protected void sortContacts(Scanner scanner) {
         ConsoleUI.clearConsole();
@@ -416,6 +423,8 @@ public class Tester extends User {
         System.out.println("1. First Name");
         System.out.println("2. Last Name");
         System.out.println("3. Phone Number");
+        System.out.println("4. Birth Date");
+        System.out.println("5. City/State (from Address)");
         System.out.print("Choice: ");
         String colChoice = scanner.nextLine().trim();
 
@@ -424,12 +433,14 @@ public class Tester extends User {
             case "1" -> orderByColumn = "first_name";
             case "2" -> orderByColumn = "last_name";
             case "3" -> orderByColumn = "phone_primary";
+            case "4" -> orderByColumn = "birthdate";
+            case "5" -> orderByColumn = "TRIM(SUBSTRING_INDEX(address, ',', -1))";
             default -> ConsoleUI.printError("Invalid column! Defaulting to First Name.");
         }
 
         System.out.println("Direction:");
         System.out.println("1. Ascending (A-Z)");
-        System.out.println("2. Descending (Z-A)");
+        System.out.println("2. Descending (Z-A )");
         System.out.print("Choice: ");
         String dirChoice = scanner.nextLine().trim();
 
@@ -444,11 +455,12 @@ public class Tester extends User {
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
-            System.out.println("Sorting by " + orderByColumn + " (" + direction + ")...");
+            System.out.println("Sorting... (" + direction + ")");
             printResultSetTable(rs);
 
         } catch (SQLException e) {
             ConsoleUI.printError("Database error: " + e.getMessage());
         }
+        ConsoleUI.pause();
     }
 }
