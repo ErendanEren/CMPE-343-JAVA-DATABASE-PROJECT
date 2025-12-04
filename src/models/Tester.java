@@ -214,7 +214,7 @@ public class Tester extends User {
             // Başlık – Search ekranındakiyle AYNI
             System.out.printf(
                     ConsoleUI.YELLOW_BOLD +
-                            "%-4s %-15s %-15s %-15s %-12s %-35s %-25s%n" +
+                            "%-4s %-15s %-15s %-15s %-12s %-25s %-25s%n" +
                             ConsoleUI.RESET,
                     "ID", "First Name", "Last Name", "Phone", "Birthdate", "Address", "Email"
             );
@@ -236,7 +236,7 @@ public class Tester extends User {
                 String birthStr = (birth == null) ? "-" : birth.toString();
 
                 System.out.printf(
-                        "%-4d %-15s %-15s %-15s %-12s %-35s %-25s%n",
+                        "%-4d %-15s %-15s %-15s %-12s %-25s %-25s%n",
                         id, name, surname, phone, birthStr, address, email
                 );
             }
@@ -369,7 +369,7 @@ public class Tester extends User {
         System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
         System.out.printf(
                 ConsoleUI.YELLOW_BOLD +
-                        "%-4s %-15s %-15s %-15s %-12s %-35s %-25s%n" +
+                        "%-4s %-15s %-15s %-15s %-12s %-25s %-25s%n" +
                         ConsoleUI.RESET,
                 "ID", "First Name", "Last Name", "Phone", "Birthdate", "Address", "Email"
         );
@@ -382,7 +382,7 @@ public class Tester extends User {
                 String birthStr = (c.getBirthdate() == null) ? "-" : c.getBirthdate().toString();
 
                 System.out.printf(
-                        "%-4d %-15s %-15s %-15s %-12s %-35s %-25s%n",
+                        "%-4d %-15s %-15s %-15s %-12s %-25s %-25s%n",
                         c.getContactId(),
                         c.getName(),
                         c.getSurname(),

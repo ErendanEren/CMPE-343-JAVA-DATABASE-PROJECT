@@ -410,9 +410,9 @@ public class Manager extends User {
         String sqlTotal = "SELECT COUNT(*) as total FROM contacts";
 
         // 2. Yaş Analizleri (MySQL Fonksiyonları)
-        String sqlAvgAge = "SELECT AVG(TIMESTAMPDIFF(YEAR, birth_date, CURDATE())) as avg_age FROM contacts WHERE birth_date IS NOT NULL";
-        String sqlYoungest = "SELECT first_name, last_name, birth_date FROM contacts WHERE birth_date IS NOT NULL ORDER BY birth_date DESC LIMIT 1";
-        String sqlOldest = "SELECT first_name, last_name, birth_date FROM contacts WHERE birth_date IS NOT NULL ORDER BY birth_date ASC LIMIT 1";
+        String sqlAvgAge = "SELECT AVG(TIMESTAMPDIFF(YEAR, birthdate, CURDATE())) as avg_age FROM contacts WHERE birthdate IS NOT NULL";
+        String sqlYoungest = "SELECT first_name, last_name, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate DESC LIMIT 1";
+        String sqlOldest = "SELECT first_name, last_name, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate ASC LIMIT 1";
 
         // 3. İsim Paylaşımı (En sık tekrarlanan isimler)
         String sqlMostSharedName = "SELECT first_name, COUNT(*) as cnt FROM contacts GROUP BY first_name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
@@ -446,7 +446,7 @@ public class Manager extends User {
             if (rs.next()) {
                 System.out.println("Youngest Contact: " + ConsoleUI.GREEN_BOLD +
                         rs.getString("first_name") + " " + rs.getString("last_name") +
-                        " (" + rs.getDate("birth_date") + ")" + ConsoleUI.RESET);
+                        " (" + rs.getDate("birthdate") + ")" + ConsoleUI.RESET);
             }
             rs.close();
 
@@ -455,7 +455,7 @@ public class Manager extends User {
             if (rs.next()) {
                 System.out.println("Oldest Contact:   " + ConsoleUI.RED_BOLD +
                         rs.getString("first_name") + " " + rs.getString("last_name") +
-                        " (" + rs.getDate("birth_date") + ")" + ConsoleUI.RESET);
+                        " (" + rs.getDate("birthdate") + ")" + ConsoleUI.RESET);
             }
             rs.close();
 

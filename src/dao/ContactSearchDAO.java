@@ -61,7 +61,7 @@ public class ContactSearchDAO {
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            pstmt.setString(1,query + "%");
+            pstmt.setString(1,"%"+ query + "%");
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 results = mapResultSetToContacts(rs);
@@ -80,7 +80,7 @@ public class ContactSearchDAO {
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            pstmt.setString(1,  query + "%");
+            pstmt.setString(1,"%"+  query + "%");
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 results = mapResultSetToContacts(rs);
@@ -139,7 +139,7 @@ public class ContactSearchDAO {
         String sql =
                 "SELECT * FROM contacts " +
                         "WHERE (first_name LIKE ? OR last_name LIKE ?) " +
-                        "AND MONTH(birth_date) = ?";
+                        "AND MONTH(birthdate) = ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
