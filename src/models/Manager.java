@@ -459,7 +459,7 @@ public class Manager extends User {
                 System.out.println("Most Shared Name: None (All unique)");
             }
             rs.close();
-            
+
             rs = stmt.executeQuery(sqlMostSharedSurname);
             if (rs.next()) {
                 System.out.println("Most Shared Surname: " + ConsoleUI.CYAN_BOLD + rs.getString("last_name") +
