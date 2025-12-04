@@ -405,7 +405,6 @@ public class Manager extends User {
 
         String sqlTotal = "SELECT COUNT(*) as total FROM contacts";
 
-        // 2. Yaş Analizleri (MySQL Fonksiyonları)
         String sqlAvgAge = "SELECT AVG(TIMESTAMPDIFF(YEAR, birthdate, CURDATE())) as avg_age FROM contacts WHERE birthdate IS NOT NULL";
         String sqlYoungest = "SELECT first_name, last_name, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate DESC LIMIT 1";
         String sqlOldest = "SELECT first_name, last_name, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate ASC LIMIT 1";
@@ -460,7 +459,6 @@ public class Manager extends User {
                 System.out.println("Most Shared Name: None (All unique)");
             }
             rs.close();
-
             
             rs = stmt.executeQuery(sqlMostSharedSurname);
             if (rs.next()) {
