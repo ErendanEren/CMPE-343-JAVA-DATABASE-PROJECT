@@ -11,30 +11,24 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Scanner;
+import java.util.Stack;
 
-/**
- * Represents the "Senior Developer" role.
- *
- * Senior extends {@link Junior}, so it inherits:
- * - change password
- * - list / search / sort contacts
- * - update existing contact
- *
- * Additionally, Senior can:
- * - add new contact(s)
- * - delete existing contact(s)
- *
- * Ops from spec:
- *  change password, logout, list all contacts,
- *  search by selected field or fields,
- *  sort by selected (by user) field,
- *  update existing contact,
- *  add new contact or contacts,
- *  delete existing contact or contacts.
- *
- * @author Eren Çakır Bircan
- */
+
 public class Senior extends Junior {
+
+    private final Stack<ContactSnapshot> deletedContactsStack = new Stack<>();
+
+
+    private static class ContactSnapshot {
+        int contactId;
+        String firstName;
+        String lastName;
+        String nickname;
+        String phonePrimary;
+        String email;
+        String address;
+        java.sql.Date birthdate;
+    }
 
     public Senior() {
         super();
@@ -62,6 +56,7 @@ public class Senior extends Junior {
                             "5) Update existing contact",
                             "6) Add new contact",
                             "7) Delete contact",
+                            "8) Undo last delete",
                             "",
                             "0) Logout"
                     },
@@ -76,6 +71,7 @@ public class Senior extends Junior {
                 case "5" -> updateContact(scanner);      // Junior
                 case "6" -> addContact(scanner);         // Senior ekstra
                 case "7" -> deleteContact(scanner);      // Senior ekstra
+                case "8" -> undoLastDelete();            // Senior ekstra
                 case "0" -> {
                     running = false;
                     ConsoleUI.printInfo("Logging out...");
@@ -169,6 +165,10 @@ public class Senior extends Junior {
         ConsoleUI.pause();
     }
 
+    /**
+     * Optional helper for reading a birth date step by step.
+     * Şu an kullanılmıyor ama istersen diğer yerlerde kullanabilirsin.
+     */
     private java.sql.Date readBirthDateFromUser(Scanner scanner) {
         while (true) {
             System.out.println("Birth date (leave year empty = unknown)");
@@ -213,12 +213,13 @@ public class Senior extends Junior {
                 return java.sql.Date.valueOf(ld);
             } catch (Exception e) {
                 ConsoleUI.printError("Invalid date combination! Please try again.");
-
             }
         }
     }
 
-
+    /**
+     * Deletes a contact and pushes a snapshot to the undo stack.
+     */
     public void deleteContact(Scanner scanner) {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.YELLOW_BOLD + "=== Delete Contact (Senior) ===" + ConsoleUI.RESET);
@@ -242,8 +243,8 @@ public class Senior extends Junior {
             return;
         }
 
-        // Önce böyle bir contact var mı, adını gösterelim
-        String checkSql = "SELECT first_name, last_name FROM contacts WHERE contact_id = ?";
+        // Tüm bilgileri alalım ki undo'da geri ekleyelim
+        String checkSql = "SELECT * FROM contacts WHERE contact_id = ?";
         String deleteSql = "DELETE FROM contacts WHERE contact_id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -257,32 +258,98 @@ public class Senior extends Junior {
                     return;
                 }
 
-                String fname = rs.getString("first_name");
-                String lname = rs.getString("last_name");
+                // Snapshot oluştur
+                ContactSnapshot snap = new ContactSnapshot();
+                snap.contactId    = rs.getInt("contact_id");
+                snap.firstName    = rs.getString("first_name");
+                snap.lastName     = rs.getString("last_name");
+                snap.nickname     = rs.getString("nickname");
+                snap.phonePrimary = rs.getString("phone_primary");
+                snap.email        = rs.getString("email");
+                snap.address      = rs.getString("address");
+                snap.birthdate    = rs.getDate("birthdate");
+
                 System.out.println("You are about to delete: " + ConsoleUI.RED_BOLD +
-                        fname + " " + lname + ConsoleUI.RESET);
-            }
+                        snap.firstName + " " + snap.lastName + ConsoleUI.RESET);
 
-            System.out.print("Are you sure? (yes/no): ");
-            String confirm = scanner.nextLine().trim();
-            if (!confirm.equalsIgnoreCase("yes")) {
-                ConsoleUI.printInfo("Delete cancelled.");
-                ConsoleUI.pause();
-                return;
-            }
+                System.out.print("Are you sure? (yes/no): ");
+                String confirm = scanner.nextLine().trim();
+                if (!confirm.equalsIgnoreCase("yes")) {
+                    ConsoleUI.printInfo("Delete cancelled.");
+                    ConsoleUI.pause();
+                    return;
+                }
 
-            try (PreparedStatement delPs = conn.prepareStatement(deleteSql)) {
-                delPs.setInt(1, contactId);
-                int affected = delPs.executeUpdate();
-                if (affected > 0) {
-                    ConsoleUI.printInfo("Contact deleted successfully.");
-                } else {
-                    ConsoleUI.printError("Delete failed.");
+                // Önce stack'e push et
+                deletedContactsStack.push(snap);
+
+                try (PreparedStatement delPs = conn.prepareStatement(deleteSql)) {
+                    delPs.setInt(1, contactId);
+                    int affected = delPs.executeUpdate();
+                    if (affected > 0) {
+                        ConsoleUI.printInfo("Contact deleted successfully. (You can undo with option 8)");
+                    } else {
+                        ConsoleUI.printError("Delete failed.");
+                        // başarısızsa stack'ten geri al
+                        deletedContactsStack.pop();
+                    }
                 }
             }
 
         } catch (SQLException e) {
             ConsoleUI.printError("Database error while deleting contact: " + e.getMessage());
+        }
+
+        ConsoleUI.pause();
+    }
+
+    /**
+     * Restores the last deleted contact from the stack.
+     */
+    public void undoLastDelete() {
+        ConsoleUI.clearConsole();
+        System.out.println(ConsoleUI.YELLOW_BOLD + "=== Undo Last Delete (Senior) ===" + ConsoleUI.RESET);
+
+        if (deletedContactsStack.isEmpty()) {
+            ConsoleUI.printInfo("There is no deleted contact to restore.");
+            ConsoleUI.pause();
+            return;
+        }
+
+        ContactSnapshot snap = deletedContactsStack.pop();
+
+        String sql = """
+                INSERT INTO contacts
+                  (contact_id, first_name, last_name, nickname, phone_primary, email, address, birthdate)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, snap.contactId);
+            ps.setString(2, snap.firstName);
+            ps.setString(3, snap.lastName);
+            ps.setString(4, snap.nickname);
+            ps.setString(5, snap.phonePrimary);
+            ps.setString(6, snap.email);
+            ps.setString(7, snap.address);
+
+            if (snap.birthdate != null) {
+                ps.setDate(8, snap.birthdate);
+            } else {
+                ps.setNull(8, Types.DATE);
+            }
+
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                ConsoleUI.printInfo("Last deleted contact restored successfully.");
+            } else {
+                ConsoleUI.printError("Failed to restore contact.");
+            }
+
+        } catch (SQLException e) {
+            ConsoleUI.printError("Database error while restoring contact: " + e.getMessage());
         }
 
         ConsoleUI.pause();
