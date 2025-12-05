@@ -11,7 +11,6 @@ public class Group09 {
 
     public static void main(String[] args) {
 
-        // 1. PROGRAM AÇILIŞINDA ANİMASYON (Hocanın isteği) 
         ConsoleUI.printBootAnimation();
 
         while (true) {
@@ -39,12 +38,10 @@ public class Group09 {
                 continue;
             }
 
-            // Successful login
             ConsoleUI.clearConsole();
             System.out.println("Welcome, " + loggedIn.getName() +
                     " (" + loggedIn.getRole() + ")");
 
-            // Each subclass overrides showMenu(scanner)
             loggedIn.showMenu(scanner);
         }
     }
