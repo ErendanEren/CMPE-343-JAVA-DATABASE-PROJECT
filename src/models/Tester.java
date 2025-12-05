@@ -58,7 +58,7 @@ public class Tester extends User {
 
         while (running) {
             String choice = ConsoleUI.showMenu(
-                    ConsoleUI.BLUE_BOLD + "Tester Menu" + ConsoleUI.RESET,
+                    ConsoleUI.BLUE_BOLD + "Tester Panel: " + getName() + " " + getSurname() + ConsoleUI.RESET,
                     new String[]{
                             "1) Change password",
                             "2) List all contacts",
@@ -206,45 +206,54 @@ public class Tester extends User {
      */
     private void printResultSetTable(ResultSet rs) {
         try {
-            String line = "--------------------------------------------------------------------------------------------------------------";
+            // Tablo genişliğini biraz artırdık çünkü yeni sütun ekliyoruz
+            String line = "----------------------------------------------------------------------------------------------------------------------------------------------------------------";
 
-            // Üst çizgi
             System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
-
-            // Başlık – Search ekranındakiyle AYNI
             System.out.printf(
                     ConsoleUI.YELLOW_BOLD +
-                            "%-4s %-15s %-15s %-15s %-12s %-35s %-25s%n" +
+                            "%-4s %-20s %-15s %-10s %-12s %-12s %-12s %-25s %-25s%n" +
                             ConsoleUI.RESET,
-                    "ID", "First Name", "Last Name", "Phone", "Birthdate", "Address", "Email"
+                    "ID", "First (+Mid) Name", "Last Name", "Nickname", "Pri. Phone", "Sec. Phone", "Birthdate", "Address", "Email"
             );
-
             System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
 
             boolean found = false;
             while (rs.next()) {
                 found = true;
 
-                int id          = rs.getInt("contact_id");
-                String name     = rs.getString("first_name");
-                String surname  = rs.getString("last_name");
-                String phone    = rs.getString("phone_primary");
-                Date birth      = rs.getDate("birthdate");
-                String address  = rs.getString("address");
-                String email    = rs.getString("email");
+                int id = rs.getInt("contact_id");
+                String first = rs.getString("first_name");
+                String middle = rs.getString("middle_name");
+                String last = rs.getString("last_name");
+                String nick = rs.getString("nickname");
+                String phone = rs.getString("phone_primary");
+                String secPhone = rs.getString("phone_secondary");
+
+                Date birth = null;
+                try { birth = rs.getDate("birthdate"); } catch (SQLException e) { }
+
+                String address = rs.getString("address");
+                String email = rs.getString("email");
+
+                // Birleştirme ve Null Kontrolleri
+                String fullName = first + (middle != null && !middle.isEmpty() ? " " + middle : "");
+
+                if (nick == null) nick = "-";
+                if (address == null) address = "-";
+                if (secPhone == null || secPhone.isEmpty()) secPhone = "-";
 
                 String birthStr = (birth == null) ? "-" : birth.toString();
 
                 System.out.printf(
-                        "%-4d %-15s %-15s %-15s %-12s %-35s %-25s%n",
-                        id, name, surname, phone, birthStr, address, email
+                        "%-4d %-20s %-15s %-10s %-12s %-12s %-12s %-25s %-25s%n",
+                        id, fullName, last, nick, phone, secPhone, birthStr, address, email
                 );
             }
 
             if (!found) {
                 System.out.println(ConsoleUI.RED_BOLD + "No records found." + ConsoleUI.RESET);
             }
-
             System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
 
         } catch (SQLException e) {
@@ -369,7 +378,7 @@ public class Tester extends User {
         System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
         System.out.printf(
                 ConsoleUI.YELLOW_BOLD +
-                        "%-4s %-15s %-15s %-15s %-12s %-35s %-25s%n" +
+                        "%-4s %-15s %-15s %-15s %-12s %-25s %-25s%n" +
                         ConsoleUI.RESET,
                 "ID", "First Name", "Last Name", "Phone", "Birthdate", "Address", "Email"
         );
@@ -382,7 +391,7 @@ public class Tester extends User {
                 String birthStr = (c.getBirthdate() == null) ? "-" : c.getBirthdate().toString();
 
                 System.out.printf(
-                        "%-4d %-15s %-15s %-15s %-12s %-35s %-25s%n",
+                        "%-4d %-15s %-15s %-15s %-12s %-25s %-25s%n",
                         c.getContactId(),
                         c.getName(),
                         c.getSurname(),
@@ -425,6 +434,7 @@ public class Tester extends User {
         System.out.println("3. Phone Number");
         System.out.println("4. Birth Date");
         System.out.println("5. City/State (from Address)");
+        System.out.println("6. Nickname");
         System.out.print("Choice: ");
         String colChoice = scanner.nextLine().trim();
 
@@ -435,6 +445,7 @@ public class Tester extends User {
             case "3" -> orderByColumn = "phone_primary";
             case "4" -> orderByColumn = "birthdate";
             case "5" -> orderByColumn = "TRIM(SUBSTRING_INDEX(address, ',', -1))";
+            case "6" -> orderByColumn = "nickname";
             default -> ConsoleUI.printError("Invalid column! Defaulting to First Name.");
         }
 
