@@ -12,6 +12,8 @@ public class Group09 {
 
     public static void main(String[] args) {
 
+        ConsoleUI.printBootAnimation();
+
         while (true) {
             ConsoleUI.clearConsole();
             ConsoleUI.printLoginBox();
@@ -36,12 +38,10 @@ public class Group09 {
                 continue;
             }
 
-            // Successful login
             ConsoleUI.clearConsole();
             System.out.println("Welcome, " + loggedIn.getName() +
                     " (" + loggedIn.getRole() + ")");
 
-            // Each subclass overrides showMenu(scanner)
             loggedIn.showMenu(scanner);
         }
     }

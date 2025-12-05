@@ -31,6 +31,7 @@ public class Manager extends User {
      * The menu loop continues until the user chooses to logout.
      * <p>
      * This method acts as the main controller for the Manager's session.
+     * It dynamically displays the "Undo" option based on the stack's state.
      * </p>
      *
      * @param scanner The Scanner object used to read user input from the console.
@@ -83,8 +84,8 @@ public class Manager extends User {
     /**
      * Restores the most recently deleted user from the stack back to the database.
      * <p>
-     * It retrieves the last {@code User} object pushed onto the stack and executes an INSERT statement.
-     * If the restoration fails, the user is pushed back onto the stack to prevent data loss.
+     * It retrieves the last {@code User} object pushed onto the stack (LIFO) and executes an INSERT statement.
+     * If the restoration fails (e.g. username taken), the user is pushed back onto the stack to prevent data loss.
      * </p>
      *
      * @author Zafer Mert Serinken
@@ -123,7 +124,7 @@ public class Manager extends User {
     /**
      * Deletes a user from the system based on the provided User ID.
      * <p>
-     * Before deletion, the user data is backed up to a Stack to enable the Undo operation.
+     * Before deletion, the user data is retrieved and backed up to a Stack to enable the Undo operation.
      * Includes validation to prevent the manager from deleting their own account.
      * </p>
      *
@@ -183,7 +184,7 @@ public class Manager extends User {
      * Retrieves a User object from the database using the given User ID.
      * <p>
      * This is a helper method primarily used for backing up user data before deletion.
-     * It uses polymorphism to instantiate the correct subclass based on the role string.
+     * It uses polymorphism to instantiate the correct subclass based on the role string found in DB.
      * </p>
      *
      * @param id The unique identifier of the user to retrieve.
@@ -225,7 +226,7 @@ public class Manager extends User {
     /**
      * Lists all users currently registered in the database.
      * <p>
-     * Displays ID, Username, Name, Surname, and Role in a formatted table output.
+     * Displays ID, Username, Name, Surname, and Role in a formatted table output using {@code printf}.
      * </p>
      *
      * @author Zafer Mert Serinken
@@ -396,7 +397,7 @@ public class Manager extends User {
     /**
      * Displays comprehensive statistical information about the contacts.
      * <p>
-     * Provides analytics such as total count, age statistics (average, youngest, oldest),
+     * Provides analytics such as total count, LinkedIn usage, age statistics (average, youngest, oldest),
      * and identifies the most frequently occurring first and last names.
      * </p>
      *
@@ -408,11 +409,12 @@ public class Manager extends User {
 
         // 1. Temel Sayılar
         String sqlTotal = "SELECT COUNT(*) as total FROM contacts";
+        String sqlLinkedin = "SELECT COUNT(*) as linked FROM contacts WHERE linkedin_url IS NOT NULL AND linkedin_url != ''";
 
-        // 2. Yaş Analizleri (MySQL Fonksiyonları)
-        String sqlAvgAge = "SELECT AVG(TIMESTAMPDIFF(YEAR, birthdate, CURDATE())) as avg_age FROM contacts WHERE birthdate IS NOT NULL";
-        String sqlYoungest = "SELECT first_name, last_name, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate DESC LIMIT 1";
-        String sqlOldest = "SELECT first_name, last_name, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate ASC LIMIT 1";
+        // 2. Yaş Analizleri (MySQL Fonksiyonları) - Sütun adı birth_date olarak varsayıldı
+        String sqlAvgAge = "SELECT AVG(TIMESTAMPDIFF(YEAR, birth_date, CURDATE())) as avg_age FROM contacts WHERE birth_date IS NOT NULL";
+        String sqlYoungest = "SELECT first_name, last_name, birth_date FROM contacts WHERE birth_date IS NOT NULL ORDER BY birth_date DESC LIMIT 1";
+        String sqlOldest = "SELECT first_name, last_name, birth_date FROM contacts WHERE birth_date IS NOT NULL ORDER BY birth_date ASC LIMIT 1";
 
         // 3. İsim Paylaşımı (En sık tekrarlanan isimler)
         String sqlMostSharedName = "SELECT first_name, COUNT(*) as cnt FROM contacts GROUP BY first_name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
@@ -421,9 +423,13 @@ public class Manager extends User {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement()) {
 
-            // --- Toplam Kişi ---
+            // --- Toplam ve LinkedIn ---
             ResultSet rs = stmt.executeQuery(sqlTotal);
             if (rs.next()) System.out.println("Total Contacts: " + ConsoleUI.CYAN_BOLD + rs.getInt("total") + ConsoleUI.RESET);
+            rs.close();
+
+            rs = stmt.executeQuery(sqlLinkedin);
+            if (rs.next()) System.out.println("With LinkedIn: " + ConsoleUI.CYAN_BOLD + rs.getInt("linked") + ConsoleUI.RESET);
             rs.close();
 
             System.out.println("--------------------------------");
@@ -432,7 +438,6 @@ public class Manager extends User {
             rs = stmt.executeQuery(sqlAvgAge);
             if (rs.next()) {
                 double avg = rs.getDouble("avg_age");
-                // Eğer veri yoksa (null dönerse) 0 göster
                 if (!rs.wasNull()) {
                     System.out.printf("Average Age: " + ConsoleUI.YELLOW_BOLD + "%.1f years" + ConsoleUI.RESET + "%n", avg);
                 } else {
@@ -446,7 +451,7 @@ public class Manager extends User {
             if (rs.next()) {
                 System.out.println("Youngest Contact: " + ConsoleUI.GREEN_BOLD +
                         rs.getString("first_name") + " " + rs.getString("last_name") +
-                        " (" + rs.getDate("birthdate") + ")" + ConsoleUI.RESET);
+                        " (" + rs.getDate("birth_date") + ")" + ConsoleUI.RESET);
             }
             rs.close();
 
@@ -455,14 +460,13 @@ public class Manager extends User {
             if (rs.next()) {
                 System.out.println("Oldest Contact:   " + ConsoleUI.RED_BOLD +
                         rs.getString("first_name") + " " + rs.getString("last_name") +
-                        " (" + rs.getDate("birthdate") + ")" + ConsoleUI.RESET);
+                        " (" + rs.getDate("birth_date") + ")" + ConsoleUI.RESET);
             }
             rs.close();
 
             System.out.println("--------------------------------");
 
             // --- İsim Paylaşımı Analizi ---
-            // En çok kullanılan İsim
             rs = stmt.executeQuery(sqlMostSharedName);
             if (rs.next()) {
                 System.out.println("Most Shared Name: " + ConsoleUI.CYAN_BOLD + rs.getString("first_name") +
@@ -472,7 +476,6 @@ public class Manager extends User {
             }
             rs.close();
 
-            // En çok kullanılan Soyisim
             rs = stmt.executeQuery(sqlMostSharedSurname);
             if (rs.next()) {
                 System.out.println("Most Shared Surname: " + ConsoleUI.CYAN_BOLD + rs.getString("last_name") +

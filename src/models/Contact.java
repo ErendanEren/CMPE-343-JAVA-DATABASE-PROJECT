@@ -10,15 +10,25 @@ public class Contact {
     private String name;
     private String surname;
     private String nickname;
+
     private String primaryPhone;
+    private String secondaryPhone;   // NEW
+
     private Date birthdate;
     private String email;
     private String address;
+
+    private String middleName;       // NEW
+    private String linkedinUrl;      // NEW
 
     private Date created_at;
     private Date updated_at;
 
     // ====== CONSTRUCTORS ======
+
+    // Parametresiz ctor – Tester.fetchContactsFromQuery() için gerekli
+    public Contact() {
+    }
 
     public Contact(int contactId, int userId,
                    String name, String surname, String nickname,
@@ -71,6 +81,14 @@ public class Contact {
         this.surname = surname;
     }
 
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
     public String getPrimaryPhone() {
         return primaryPhone;
     }
@@ -79,9 +97,21 @@ public class Contact {
         this.primaryPhone = primaryPhone;
     }
 
-    public Date getBirthdate() {return birthdate;}
+    public String getSecondaryPhone() {         // NEW
+        return secondaryPhone;
+    }
 
-    public void setBirthdate(Date birthdate) {this.birthdate = birthdate;}
+    public void setSecondaryPhone(String secondaryPhone) { // NEW
+        this.secondaryPhone = secondaryPhone;
+    }
+
+    public Date getBirthdate() {
+        return birthdate;
+    }
+
+    public void setBirthdate(Date birthdate) {
+        this.birthdate = birthdate;
+    }
 
     public String getEmail() {
         return email;
@@ -97,6 +127,22 @@ public class Contact {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getMiddleName() {             // NEW
+        return middleName;
+    }
+
+    public void setMiddleName(String middleName) { // NEW
+        this.middleName = middleName;
+    }
+
+    public String getLinkedinUrl() {            // NEW
+        return linkedinUrl;
+    }
+
+    public void setLinkedinUrl(String linkedinUrl) { // NEW
+        this.linkedinUrl = linkedinUrl;
     }
 
     public Date getCreated_at() {
@@ -115,18 +161,22 @@ public class Contact {
         this.updated_at = updated_at;
     }
 
-    // ====== OPTIONAL: DEBUG PRINT ======
+    // ====== DEBUG PRINT ======
     @Override
     public String toString() {
         return "Contact{" +
                 "contactId=" + contactId +
                 ", userId=" + userId +
                 ", name='" + name + '\'' +
+                ", middleName='" + middleName + '\'' +
                 ", surname='" + surname + '\'' +
                 ", nickname='" + nickname + '\'' +
-                ", phone='" + primaryPhone + '\'' +
+                ", primaryPhone='" + primaryPhone + '\'' +
+                ", secondaryPhone='" + secondaryPhone + '\'' +
                 ", email='" + email + '\'' +
-                ", birthdate='" + birthdate + '\'' +
+                ", linkedinUrl='" + linkedinUrl + '\'' +
+                ", birthdate=" + birthdate +
+                ", address='" + address + '\'' +
                 '}';
     }
 }
