@@ -36,12 +36,12 @@ public class Group09 {
                 continue;
             }
 
-            // Successful login
+
             ConsoleUI.clearConsole();
             System.out.println("Welcome, " + loggedIn.getName() +
                     " (" + loggedIn.getRole() + ")");
 
-            // Each subclass overrides showMenu(scanner)
+
             loggedIn.showMenu(scanner);
         }
     }

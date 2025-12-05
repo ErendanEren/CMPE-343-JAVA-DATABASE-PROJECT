@@ -23,46 +23,60 @@ public class ContactSearchDAO {
         while (rs.next()) {
             int id = rs.getInt("contact_id");
             String firstName = rs.getString("first_name");
+            String middleName = rs.getString("middle_name");
             String lastName  = rs.getString("last_name");
             String nickname  = rs.getString("nickname");
             String phone     = rs.getString("phone_primary");
+            String phoneSecondary = rs.getString("phone_secondary");
             String email     = rs.getString("email");
+            String linkedinUrl = rs.getString("linkedin_url");
             String address   = rs.getString("address");
-            String company   = rs.getString("company");
+            java.sql.Date birthdate = rs.getDate("birthdate");
 
             Timestamp createdTs = rs.getTimestamp("created_at");
             Timestamp updatedTs = rs.getTimestamp("updated_at");
 
             Contact contact = new Contact(
                     id,
-                    0,                // userId (şimdilik kullanmıyorsun)
+                    0,
                     firstName,
                     lastName,
                     nickname,
                     phone,
+                    birthdate,
                     email,
                     address,
-                    company,
                     createdTs != null ? new java.sql.Date(createdTs.getTime()) : null,
                     updatedTs != null ? new java.sql.Date(updatedTs.getTime()) : null
             );
-
+            contact.setNickname(nickname);          // aslında constructor zaten alıyor ama dursun
+            contact.setMiddleName(middleName);
+            contact.setSecondaryPhone(phoneSecondary);
+            contact.setLinkedinUrl(linkedinUrl);
+            contact.setBirthdate(birthdate);
             contacts.add(contact);
         }
         return contacts;
     }
 
-    // === 1) First name ile arama ===
-    public List<Contact> searchByFirstName(String query) {
+
+    public List<Contact> searchByFirstOrMiddleName(String query) {
         List<Contact> results = new ArrayList<>();
-        String sql = "SELECT * FROM contacts WHERE first_name LIKE ?";
+
+
+        String sql = "SELECT * FROM contacts WHERE first_name LIKE ? OR middle_name LIKE ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            pstmt.setString(1,query + "%");
+            String searchPattern = "%" + query + "%";
+
+
+            pstmt.setString(1, searchPattern);
+            pstmt.setString(2, searchPattern);
 
             try (ResultSet rs = pstmt.executeQuery()) {
+
                 results = mapResultSetToContacts(rs);
             }
         } catch (SQLException e) {
@@ -79,7 +93,7 @@ public class ContactSearchDAO {
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            pstmt.setString(1,  query + "%");
+            pstmt.setString(1,"%"+  query + "%");
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 results = mapResultSetToContacts(rs);
@@ -129,18 +143,19 @@ public class ContactSearchDAO {
         return results;
     }
 
-    // === 5) Name + Birth month ===
-    // UYARI: contacts tablosunda birth_date yoksa bu fonksiyon hata verir.
-    // Şimdilik menüde 4. seçeneği kullanmazsan sorun olmaz.
+
     public List<Contact> searchByNameAndBirthMonth(String name, int month) {
         List<Contact> results = new ArrayList<>();
 
-        String sql = "SELECT * FROM contacts " +
-                "WHERE (first_name LIKE ? OR last_name LIKE ?) " +
-                "AND MONTH(birth_date) = ?";
+
+        String sql =
+                "SELECT * FROM contacts " +
+                        "WHERE (first_name LIKE ? OR middle_name LIKE ?) " +
+                        "AND MONTH(birthdate) = ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
 
             pstmt.setString(1, "%" + name + "%");
             pstmt.setString(2, "%" + name + "%");
@@ -155,7 +170,7 @@ public class ContactSearchDAO {
         return results;
     }
 
-    // === 6) Telefon parçası + email parçası ===
+
     public List<Contact> searchByPhonePartAndEmailPart(String phonePart, String emailPart) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE phone_primary LIKE ? AND email LIKE ?";

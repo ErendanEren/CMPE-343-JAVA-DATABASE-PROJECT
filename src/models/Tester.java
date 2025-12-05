@@ -3,6 +3,7 @@ package models;
 import Database.DatabaseConnection;
 import dao.ContactSearchDAO;
 import util.ConsoleUI;
+import java.sql.Date;
 
 import java.security.MessageDigest;
 import java.sql.Connection;
@@ -57,7 +58,7 @@ public class Tester extends User {
 
         while (running) {
             String choice = ConsoleUI.showMenu(
-                    ConsoleUI.BLUE_BOLD + "Tester Menu" + ConsoleUI.RESET,
+                    ConsoleUI.BLUE_BOLD + "Tester Panel: " + getName() + " " + getSurname() + ConsoleUI.RESET,
                     new String[]{
                             "1) Change password",
                             "2) List all contacts",
@@ -171,7 +172,9 @@ public class Tester extends User {
      * @author selcukaloba
      */
     protected void listAllContacts(Scanner scanner) {
-        System.out.println("\n--- LIST ALL CONTACTS ---");
+        ConsoleUI.clearConsole();
+        System.out.println(ConsoleUI.YELLOW_BOLD + "=== List All Contacts ===" + ConsoleUI.RESET);
+
         String sql = "SELECT * FROM contacts";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -183,6 +186,8 @@ public class Tester extends User {
         } catch (SQLException e) {
             ConsoleUI.printError("Database error: " + e.getMessage());
         }
+
+        ConsoleUI.pause();
     }
     /**
      *Iterates over the SQL{@code ResultSet} and displays the contact information in a format of table.
@@ -201,29 +206,55 @@ public class Tester extends User {
      */
     private void printResultSetTable(ResultSet rs) {
         try {
-            System.out.println("-------------------------------------------------------------------------");
-            System.out.printf("%-5s %-15s %-15s %-15s %-20s\n",
-                    "ID", "First Name", "Last Name", "Phone", "Address","Email","Birth Date", "Created_At", "Updated_At");
-            System.out.println("-------------------------------------------------------------------------");
+
+            String line = "----------------------------------------------------------------------------------------------------------------------------------------------------------------";
+
+            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
+            System.out.printf(
+                    ConsoleUI.YELLOW_BOLD +
+                            "%-4s %-20s %-15s %-10s %-12s %-12s %-12s %-25s %-25s%n" +
+                            ConsoleUI.RESET,
+                    "ID", "First (+Mid) Name", "Last Name", "Nickname", "Pri. Phone", "Sec. Phone", "Birthdate", "Address", "Email"
+            );
+            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
 
             boolean found = false;
             while (rs.next()) {
                 found = true;
+
                 int id = rs.getInt("contact_id");
-                String name = rs.getString("first_name");
-                String surname = rs.getString("last_name");
+                String first = rs.getString("first_name");
+                String middle = rs.getString("middle_name");
+                String last = rs.getString("last_name");
+                String nick = rs.getString("nickname");
                 String phone = rs.getString("phone_primary");
+                String secPhone = rs.getString("phone_secondary");
+
+                Date birth = null;
+                try { birth = rs.getDate("birthdate"); } catch (SQLException e) { }
+
+                String address = rs.getString("address");
                 String email = rs.getString("email");
 
-                System.out.printf("%-5d %-15s %-15s %-15s %-20s\n",
-                        id, name, surname, phone, email);
+
+                String fullName = first + (middle != null && !middle.isEmpty() ? " " + middle : "");
+
+                if (nick == null) nick = "-";
+                if (address == null) address = "-";
+                if (secPhone == null || secPhone.isEmpty()) secPhone = "-";
+
+                String birthStr = (birth == null) ? "-" : birth.toString();
+
+                System.out.printf(
+                        "%-4d %-20s %-15s %-10s %-12s %-12s %-12s %-25s %-25s%n",
+                        id, fullName, last, nick, phone, secPhone, birthStr, address, email
+                );
             }
 
             if (!found) {
-                System.out.println("No records found.");
+                System.out.println(ConsoleUI.RED_BOLD + "No records found." + ConsoleUI.RESET);
             }
-            System.out.println("-------------------------------------------------------------------------");
-            ConsoleUI.pause();
+            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
 
         } catch (SQLException e) {
             ConsoleUI.printError("Error printing table: " + e.getMessage());
@@ -253,11 +284,11 @@ public class Tester extends User {
             ConsoleUI.clearConsole();
 
             System.out.println(ConsoleUI.YELLOW_BOLD + "=== Search Contacts (Tester) ===" + ConsoleUI.RESET);
-            System.out.println("1) Search by First Name (Partial)");
+            System.out.println("1) Search by First(+Mid) Name (Partial)");
             System.out.println("2) Search by Last Name (Partial)");
             System.out.println("3) Search by Phone Number (Validated)");
             System.out.println("4) [Multi] Name AND Birth Month");
-            System.out.println("5) [Multi] Lastname AND City/Address");
+            System.out.println("5) [Multi] Lastname AND City");
             System.out.println("6) [Multi] Phone Part AND Email Part");
             System.out.println("0) Back to Tester Menu");
             System.out.print("Select search type: ");
@@ -267,9 +298,9 @@ public class Tester extends User {
 
             switch (choice) {
                 case "1" -> {
-                    System.out.print("Enter first name (or part of it): ");
-                    String firstNameQuery = scanner.nextLine();
-                    results = searchDAO.searchByFirstName(firstNameQuery);
+                    System.out.print("Enter first name (or part of it or middle name): ");
+                    String NameQuery = scanner.nextLine();
+                    results = searchDAO.searchByFirstOrMiddleName(NameQuery);
                 }
                 case "2" -> {
                     System.out.print("Enter last name (or part of it): ");
@@ -286,7 +317,7 @@ public class Tester extends User {
                     }
                 }
                 case "4" -> {
-                    System.out.print("Enter name: ");
+                    System.out.print("Enter name(First or Middle): ");
                     String name = scanner.nextLine();
                     System.out.print("Enter birth month (1-12): ");
                     try {
@@ -303,7 +334,7 @@ public class Tester extends User {
                 case "5" -> {
                     System.out.print("Enter lastname: ");
                     String lname = scanner.nextLine();
-                    System.out.print("Enter city/address part: ");
+                    System.out.print("Enter city part: ");
                     String city = scanner.nextLine();
                     results = searchDAO.searchByLastnameAndCity(lname, city);
                 }
@@ -342,32 +373,58 @@ public class Tester extends User {
      * @author Arda Dulger
      */
     private void printSearchResults(List<Contact> contacts) {
-        System.out.println("----------------------------------------------------------------------------------------------");
-        System.out.printf("%-5s %-15s %-15s %-15s %-20s %-25s\n",
-                "ID", "First Name", "Last Name", "Phone", "Address", "Email");
-        System.out.println("----------------------------------------------------------------------------------------------");
-        for (Contact c : contacts) {
-            System.out.printf("%-5d %-15s %-15s %-15s %-20s %-25s\n",
-                    c.getContactId(),
-                    c.getName(),
-                    c.getSurname(),
-                    c.getPrimaryPhone(),
-                    c.getAddress(),
-                    c.getEmail());
+        String line = "--------------------------------------------------------------------------------------------------------------";
+
+        System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
+        System.out.printf(
+                ConsoleUI.YELLOW_BOLD +
+                        "%-4s %-22s %-15s %-15s %-12s %-25s %-25s%n" +
+                        ConsoleUI.RESET,
+                "ID", "First(+Mid) Name", "Last Name", "Phone", "Birthdate", "Address", "Email"
+        );
+        System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
+
+        if (contacts.isEmpty()) {
+            System.out.println(ConsoleUI.RED_BOLD + "No records found." + ConsoleUI.RESET);
+        } else {
+            for (Contact c : contacts) {
+                String birthStr = (c.getBirthdate() == null) ? "-" : c.getBirthdate().toString();
+                String firstName = c.getName();
+                String middleName = c.getMiddleName();
+                String fullName = firstName + (middleName != null && !middleName.isEmpty() ? " " + middleName : "");
+                System.out.printf(
+                        "%-4d %-22s %-15s %-15s %-12s %-25s %-25s%n",
+                        c.getContactId(),
+                        fullName,
+                        c.getSurname(),
+                        c.getPrimaryPhone(),
+                        birthStr,
+                        c.getAddress(),
+                        c.getEmail()
+                );
+            }
         }
-        System.out.println("----------------------------------------------------------------------------------------------");
+
+        System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
     }
 
     /**
      * Sorts and displays contacts based on user-selected criteria.
      * <p>
-     * Prompts the user to select a column (First Name, Last Name, or Phone) and
-     * a sorting direction (Ascending or Descending). Constructs a dynamic SQL query
-     * using safe mapping (switch-case) to prevent SQL Injection.
+     * Prompts the user to select a column:
+     * <ul>
+     * <li>1. First Name</li>
+     * <li>2. Last Name</li>
+     * <li>3. Phone Number</li>
+     * <li>4. Birth Date (Oldest to Newest or vice versa)</li>
+     * <li>5. City/State (Extracted from Address field)</li>
+     * </ul>
+     * Then prompts for direction (Ascending/Descending).
+     * Constructs a dynamic SQL query using safe mapping to prevent SQL Injection.
      * </p>
      *
-     * @param scanner The {@link Scanner} object to read user input for column and direction.
-     * @author selcukaloba
+     * @param scanner The {@link Scanner} object to read user input.
+     * @author Selcuk Aloba
      */
     protected void sortContacts(Scanner scanner) {
         ConsoleUI.clearConsole();
@@ -377,6 +434,9 @@ public class Tester extends User {
         System.out.println("1. First Name");
         System.out.println("2. Last Name");
         System.out.println("3. Phone Number");
+        System.out.println("4. Birth Date");
+        System.out.println("5. City/State (from Address)");
+        System.out.println("6. Nickname");
         System.out.print("Choice: ");
         String colChoice = scanner.nextLine().trim();
 
@@ -385,12 +445,15 @@ public class Tester extends User {
             case "1" -> orderByColumn = "first_name";
             case "2" -> orderByColumn = "last_name";
             case "3" -> orderByColumn = "phone_primary";
+            case "4" -> orderByColumn = "birthdate";
+            case "5" -> orderByColumn = "TRIM(SUBSTRING_INDEX(address, ',', -1))";
+            case "6" -> orderByColumn = "nickname";
             default -> ConsoleUI.printError("Invalid column! Defaulting to First Name.");
         }
 
         System.out.println("Direction:");
         System.out.println("1. Ascending (A-Z)");
-        System.out.println("2. Descending (Z-A)");
+        System.out.println("2. Descending (Z-A )");
         System.out.print("Choice: ");
         String dirChoice = scanner.nextLine().trim();
 
@@ -405,11 +468,12 @@ public class Tester extends User {
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
-            System.out.println("Sorting by " + orderByColumn + " (" + direction + ")...");
+            System.out.println("Sorting... (" + direction + ")");
             printResultSetTable(rs);
 
         } catch (SQLException e) {
             ConsoleUI.printError("Database error: " + e.getMessage());
         }
+        ConsoleUI.pause();
     }
 }
