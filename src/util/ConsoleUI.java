@@ -26,6 +26,8 @@ public class ConsoleUI {
     public static final String RED_BOLD    = "\u001B[1;31m";
     public static final String GREEN_BOLD  = "\u001B[1;32m";
     public static final String YELLOW_BOLD = "\u001B[1;33m";
+    public static final String PURPLE_BOLD = "\u001B[1;35m";
+    public static final String WHITE_BOLD  = "\u001B[1;37m";
 
     public static final String LIGHT_GRAY  = "\u001B[37m";
     public static final String ITALIC      = "\u001B[3m";
@@ -34,13 +36,11 @@ public class ConsoleUI {
     // Animasyonun hızını buradan ayarlayabilirsin (ms cinsinden)
     private static final int ANIMATION_DELAY = 40;
 
-    // =========================================================
-    // BOOT / SHUTDOWN ANİMASYONU
-    // =========================================================
-
+    // ====== BOOT ANIMASYONU (BAŞLANGIÇ) ======
     public static void printBootAnimation() {
         clearConsole();
 
+        // 1. Sistem Yükleme Efekti (Loading Bar)
         System.out.println(CYAN_BOLD + "Initializing System Constraints..." + RESET);
         printProgressBar("Loading Modules", 100);
 
@@ -84,10 +84,10 @@ public class ConsoleUI {
         } catch (InterruptedException e) { }
     }
 
-    // Yardımcı: Yükleme Çubuğu
+    // Yardımcı Metod: Yükleme Çubuğu Çizer
     private static void printProgressBar(String taskName, int total) {
         String anim = "|/-\\";
-        for (int i = 0; i <= total; i += 4) {
+        for (int i = 0; i <= total; i += 4) { // 4'er 4'er artırarak hızlandırdım
             try {
                 Thread.sleep(ANIMATION_DELAY);
                 String data = "\r" + BLUE_BOLD + "[" + anim.charAt(i % 4) + "] " + taskName + ": " +
@@ -98,18 +98,11 @@ public class ConsoleUI {
                 break;
             }
         }
-        System.out.println(
-                "\r" + GREEN_BOLD +
-                        "[✓] " + taskName + ": [=========================] 100% - COMPLETED" +
-                        RESET
-        );
-        try { Thread.sleep(300); } catch (Exception e) {}
+        System.out.println("\r" + GREEN_BOLD + "[✓] " + taskName + ": [=========================] 100% - COMPLETED" + RESET);
+        try { Thread.sleep(300); } catch (Exception e){}
     }
 
-    // =========================================================
-    // CLEAR + TEMEL KUTU / MENÜ
-    // =========================================================
-
+    // ====== CLEAR CONSOLE ======
     public static void clearConsole() {
         try {
             String os = System.getProperty("os.name");
@@ -197,6 +190,7 @@ public class ConsoleUI {
     public static void printInvalidChoice() {
         System.out.println();
         System.out.println(RED_BOLD + "Invalid choice. Please try again." + RESET);
+        pause(); // Menüye dönmeden önce okuması için beklet
     }
 
     public static void printLoginBox() {

@@ -1,4 +1,3 @@
-
 import Database.DatabaseConnection;
 import models.User;
 import util.ConsoleUI;
@@ -23,7 +22,8 @@ public class Group09 {
             String username = scanner.nextLine().trim();
 
             if ("0".equals(username) || "exit".equalsIgnoreCase(username)) {
-                System.out.println("Exiting...");
+                // 2. PROGRAM KAPANIŞINDA ANİMASYON
+                ConsoleUI.printShutdownAnimation();
                 break;
             }
 
@@ -33,8 +33,8 @@ public class Group09 {
             User loggedIn = DatabaseConnection.login(username, password);
 
             if (loggedIn == null) {
-                System.out.println("Invalid username or password. Press Enter to try again...");
-                scanner.nextLine();
+                System.out.println(ConsoleUI.RED_BOLD + "\nAccess Denied: Invalid credentials." + ConsoleUI.RESET);
+                ConsoleUI.pause();
                 continue;
             }
 

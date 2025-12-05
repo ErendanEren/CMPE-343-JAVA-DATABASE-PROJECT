@@ -17,6 +17,10 @@ public class Contact {
     private Date birthdate;
     private String email;
     private String address;
+    private String middleName;
+    private String secondaryPhone;
+    private String linkedinUrl;
+
 
     private String middleName;       // NEW
     private String linkedinUrl;      // NEW
@@ -161,7 +165,38 @@ public class Contact {
         this.updated_at = updated_at;
     }
 
-    // ====== DEBUG PRINT ======
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public String getMiddleName() {
+        return middleName;
+    }
+
+    public void setMiddleName(String middleName) {
+        this.middleName = middleName;
+    }
+
+    public String getSecondaryPhone() {
+        return secondaryPhone;
+    }
+
+    public void setSecondaryPhone(String secondaryPhone) {
+        this.secondaryPhone = secondaryPhone;
+    }
+
+    public String getLinkedinUrl() {
+        return linkedinUrl;
+    }
+
+    public void setLinkedinUrl(String linkedinUrl) {
+        this.linkedinUrl = linkedinUrl;
+    }
+
     @Override
     public String toString() {
         return "Contact{" +
@@ -175,7 +210,7 @@ public class Contact {
                 ", secondaryPhone='" + secondaryPhone + '\'' +
                 ", email='" + email + '\'' +
                 ", linkedinUrl='" + linkedinUrl + '\'' +
-                ", birthdate=" + birthdate +
+                ", birthdate='" + birthdate + '\'' +
                 ", address='" + address + '\'' +
                 '}';
     }

@@ -12,21 +12,22 @@ import java.time.format.DateTimeParseException;
 
 public class ContactSearchDAO {
 
-    // Boş constructor – Tester buradan new ContactSearchDAO() diye kullanacak
     public ContactSearchDAO() {
-        // Burada Connection field YOK, her metot kendi connection'unu açıyor
     }
 
-    // === ResultSet -> Contact listesine çevir ===
+
     private List<Contact> mapResultSetToContacts(ResultSet rs) throws SQLException {
         List<Contact> contacts = new ArrayList<>();
         while (rs.next()) {
             int id = rs.getInt("contact_id");
             String firstName = rs.getString("first_name");
+            String middleName = rs.getString("middle_name");
             String lastName  = rs.getString("last_name");
             String nickname  = rs.getString("nickname");
             String phone     = rs.getString("phone_primary");
+            String phoneSecondary = rs.getString("phone_secondary");
             String email     = rs.getString("email");
+            String linkedinUrl = rs.getString("linkedin_url");
             String address   = rs.getString("address");
             java.sql.Date birthdate = rs.getDate("birthdate");
 
@@ -46,24 +47,33 @@ public class ContactSearchDAO {
                     createdTs != null ? new java.sql.Date(createdTs.getTime()) : null,
                     updatedTs != null ? new java.sql.Date(updatedTs.getTime()) : null
             );
-
+            contact.setNickname(nickname);
+            contact.setMiddleName(middleName);
+            contact.setSecondaryPhone(phoneSecondary);
+            contact.setLinkedinUrl(linkedinUrl);
             contact.setBirthdate(birthdate);
             contacts.add(contact);
         }
         return contacts;
     }
 
-    // === 1) First name ile arama ===
-    public List<Contact> searchByFirstName(String query) {
+    public List<Contact> searchByFirstOrMiddleName(String query) {
         List<Contact> results = new ArrayList<>();
-        String sql = "SELECT * FROM contacts WHERE first_name LIKE ?";
+
+
+        String sql = "SELECT * FROM contacts WHERE first_name LIKE ? OR middle_name LIKE ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            pstmt.setString(1,"%"+ query + "%");
+            String searchPattern = "%" + query + "%";
+
+
+            pstmt.setString(1, searchPattern);
+            pstmt.setString(2, searchPattern);
 
             try (ResultSet rs = pstmt.executeQuery()) {
+
                 results = mapResultSetToContacts(rs);
             }
         } catch (SQLException e) {
@@ -72,7 +82,6 @@ public class ContactSearchDAO {
         return results;
     }
 
-    // === 2) Last name ile arama ===
     public List<Contact> searchByLastName(String query) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE last_name LIKE ?";
@@ -91,7 +100,6 @@ public class ContactSearchDAO {
         return results;
     }
 
-    // === 3) Telefon ile arama ===
     public List<Contact> searchByPhoneNumber(String query) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE phone_primary LIKE ?";
@@ -110,7 +118,6 @@ public class ContactSearchDAO {
         return results;
     }
 
-    // === 4) Lastname + City/Address ===
     public List<Contact> searchByLastnameAndCity(String lastname, String city) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE last_name LIKE ? AND address LIKE ?";
@@ -130,19 +137,18 @@ public class ContactSearchDAO {
         return results;
     }
 
-    // === 5) Name + Birth month ===
-    // UYARI: contacts tablosunda birth_date yoksa bu fonksiyon hata verir.
-    // Şimdilik menüde 4. seçeneği kullanmazsan sorun olmaz.
     public List<Contact> searchByNameAndBirthMonth(String name, int month) {
         List<Contact> results = new ArrayList<>();
 
+
         String sql =
                 "SELECT * FROM contacts " +
-                        "WHERE (first_name LIKE ? OR last_name LIKE ?) " +
+                        "WHERE (first_name LIKE ? OR middle_name LIKE ?) " +
                         "AND MONTH(birthdate) = ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
 
             pstmt.setString(1, "%" + name + "%");
             pstmt.setString(2, "%" + name + "%");
@@ -157,7 +163,6 @@ public class ContactSearchDAO {
         return results;
     }
 
-    // === 6) Telefon parçası + email parçası ===
     public List<Contact> searchByPhonePartAndEmailPart(String phonePart, String emailPart) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE phone_primary LIKE ? AND email LIKE ?";
@@ -177,7 +182,6 @@ public class ContactSearchDAO {
         return results;
     }
 
-    // === 7) Tüm contact'lar ===
     public List<Contact> getAllContacts() {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts";
@@ -193,7 +197,6 @@ public class ContactSearchDAO {
         return results;
     }
 
-    // === Validation helper'lar ===
     public boolean isValidPhoneNumber(String phone) {
         return phone.matches("[0-9\\+\\-\\s]*");
     }

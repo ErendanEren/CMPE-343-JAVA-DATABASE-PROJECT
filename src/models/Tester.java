@@ -57,7 +57,7 @@ public class Tester extends User {
 
         while (running) {
             String choice = ConsoleUI.showMenu(
-                    ConsoleUI.BLUE_BOLD + "Tester Menu" + ConsoleUI.RESET,
+                    ConsoleUI.BLUE_BOLD + "Tester Panel: " + getName() + " " + getSurname() + ConsoleUI.RESET,
                     new String[]{
                             "1) Change password",
                             "2) List all contacts (Paginated Cards)",
@@ -180,10 +180,77 @@ public class Tester extends User {
 
         ConsoleUI.showPaginatedContactView(allContacts, scanner, "ALL CONTACTS");
     }
+    /**
+     *Iterates over the SQL{@code ResultSet} and displays the contact information in a format of table.
+     *<p>
+     *The main purpose of this helper is to be used in listing and sorting operations.
+     *It prints the following columns: <b>ID, First Name, Last Name, Phone, and Email</b>.
+     *</p>
+     *<p>
+     *The method handles iteration internally and catches any {@link SQLException} errors
+     *which can occur during data retrieval.
+     *</p>
+     *
+     *@param rs The {@link ResultSet} object obtained from executing a SQL query.
+     *If {@code null} or empty, appropriate messages are displayed.
+     * @author Arda Dülger
+     */
+    private void printResultSetTable(ResultSet rs) {
+        try {
 
-    // =========================================================
-    // SEARCH CONTACTS  (PAGINATED CARDS)
-    // =========================================================
+            String line = "----------------------------------------------------------------------------------------------------------------------------------------------------------------";
+
+            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
+            System.out.printf(
+                    ConsoleUI.YELLOW_BOLD +
+                            "%-4s %-20s %-15s %-10s %-12s %-12s %-12s %-25s %-25s%n" +
+                            ConsoleUI.RESET,
+                    "ID", "First (+Mid) Name", "Last Name", "Nickname", "Pri. Phone", "Sec. Phone", "Birthdate", "Address", "Email"
+            );
+            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
+
+            boolean found = false;
+            while (rs.next()) {
+                found = true;
+
+                int id = rs.getInt("contact_id");
+                String first = rs.getString("first_name");
+                String middle = rs.getString("middle_name");
+                String last = rs.getString("last_name");
+                String nick = rs.getString("nickname");
+                String phone = rs.getString("phone_primary");
+                String secPhone = rs.getString("phone_secondary");
+
+                Date birth = null;
+                try { birth = rs.getDate("birthdate"); } catch (SQLException e) { }
+
+                String address = rs.getString("address");
+                String email = rs.getString("email");
+
+
+                String fullName = first + (middle != null && !middle.isEmpty() ? " " + middle : "");
+
+                if (nick == null) nick = "-";
+                if (address == null) address = "-";
+                if (secPhone == null || secPhone.isEmpty()) secPhone = "-";
+
+                String birthStr = (birth == null) ? "-" : birth.toString();
+
+                System.out.printf(
+                        "%-4d %-20s %-15s %-10s %-12s %-12s %-12s %-25s %-25s%n",
+                        id, fullName, last, nick, phone, secPhone, birthStr, address, email
+                );
+            }
+
+            if (!found) {
+                System.out.println(ConsoleUI.RED_BOLD + "No records found." + ConsoleUI.RESET);
+            }
+            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
+
+        } catch (SQLException e) {
+            ConsoleUI.printError("Error printing table: " + e.getMessage());
+        }
+    }
 
     /**
      * Performs various contact search operations and shows results as paginated cards.
@@ -192,39 +259,26 @@ public class Tester extends User {
         boolean searching = true;
 
         while (searching) {
-            String[][] sections = {
-                    {
-                            "1) Search by First Name (Partial)",
-                            "2) Search by Last Name (Partial)",
-                            "3) Search by Phone Number (Validated)"
-                    },
-                    {
-                            "4) Name AND Birth Month",
-                            "5) Lastname AND City/Address",
-                            "6) Phone Part AND Email Part"
-                    },
-                    {
-                            ConsoleUI.RED_BOLD + "0) Back to Tester Menu" + ConsoleUI.RESET
-                    }
-            };
+            ConsoleUI.clearConsole();
 
-            String[] sectionTitles = {
-                    "Single Field Search",
-                    "Multi-Field Search",
-                    ""
-            };
-
-            ConsoleUI.printSectionedMenu("SEARCH CONTACTS (TESTER)", sections, sectionTitles);
-            System.out.print(ConsoleUI.CYAN_BOLD + "▶ " + ConsoleUI.RESET + "Select search type: ");
+            System.out.println(ConsoleUI.YELLOW_BOLD + "=== Search Contacts (Tester) ===" + ConsoleUI.RESET);
+            System.out.println("1) Search by First(+Mid) Name (Partial)");
+            System.out.println("2) Search by Last Name (Partial)");
+            System.out.println("3) Search by Phone Number (Validated)");
+            System.out.println("4) [Multi] Name AND Birth Month");
+            System.out.println("5) [Multi] Lastname AND City");
+            System.out.println("6) [Multi] Phone Part AND Email Part");
+            System.out.println("0) Back to Tester Menu");
+            System.out.print("Select search type: ");
 
             String choice = scanner.nextLine();
             List<Contact> results = null;
 
             switch (choice) {
                 case "1" -> {
-                    System.out.print("Enter first name (or part of it): ");
-                    String firstNameQuery = scanner.nextLine();
-                    results = searchDAO.searchByFirstName(firstNameQuery);
+                    System.out.print("Enter first name (or part of it or middle name): ");
+                    String NameQuery = scanner.nextLine();
+                    results = searchDAO.searchByFirstOrMiddleName(NameQuery);
                 }
                 case "2" -> {
                     System.out.print("Enter last name (or part of it): ");
@@ -243,7 +297,7 @@ public class Tester extends User {
                     }
                 }
                 case "4" -> {
-                    System.out.print("Enter name: ");
+                    System.out.print("Enter name(First or Middle): ");
                     String name = scanner.nextLine();
                     System.out.print("Enter birth month (1-12): ");
                     try {
@@ -264,7 +318,7 @@ public class Tester extends User {
                 case "5" -> {
                     System.out.print("Enter lastname: ");
                     String lname = scanner.nextLine();
-                    System.out.print("Enter city/address part: ");
+                    System.out.print("Enter city part: ");
                     String city = scanner.nextLine();
                     results = searchDAO.searchByLastnameAndCity(lname, city);
                 }
@@ -297,6 +351,48 @@ public class Tester extends User {
             }
         }
     }
+    /**
+     * Prints the list of found people in tabular form.
+     * <p>
+     * This helper allows to iterate and display the contact list.
+     * key attributes (ID, Name, Surname, Phone, Email) in arranged columns using {@code printf}.
+     * </p>
+     * @param contacts A {@code List} of {@link Contact} objects retrieved from the database.
+     * If the list empty, it will be not printed.(handled by caller)
+     * @author Arda Dulger
+     */
+    private void printSearchResults(List<Contact> contacts) {
+        String line = "--------------------------------------------------------------------------------------------------------------";
+
+        System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
+        System.out.printf(
+                ConsoleUI.YELLOW_BOLD +
+                        "%-4s %-22s %-15s %-15s %-12s %-25s %-25s%n" +
+                        ConsoleUI.RESET,
+                "ID", "First(+Mid) Name", "Last Name", "Phone", "Birthdate", "Address", "Email"
+        );
+        System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
+
+        if (contacts.isEmpty()) {
+            System.out.println(ConsoleUI.RED_BOLD + "No records found." + ConsoleUI.RESET);
+        } else {
+            for (Contact c : contacts) {
+                String birthStr = (c.getBirthdate() == null) ? "-" : c.getBirthdate().toString();
+                String firstName = c.getName();
+                String middleName = c.getMiddleName();
+                String fullName = firstName + (middleName != null && !middleName.isEmpty() ? " " + middleName : "");
+                System.out.printf(
+                        "%-4d %-22s %-15s %-15s %-12s %-25s %-25s%n",
+                        c.getContactId(),
+                        fullName,
+                        c.getSurname(),
+                        c.getPrimaryPhone(),
+                        birthStr,
+                        c.getAddress(),
+                        c.getEmail()
+                );
+            }
+        }
 
     // =========================================================
     // SORT CONTACTS  (PAGINATED CARDS)
@@ -314,21 +410,20 @@ public class Tester extends User {
         System.out.println("3. Phone Number");
         System.out.println("4. Birth Date");
         System.out.println("5. City/State (from Address)");
+        System.out.println("6. Nickname");
         System.out.print("Choice: ");
         String colChoice = scanner.nextLine().trim();
 
         String orderByColumn = "first_name";
         String sortLabel = "First Name";
         switch (colChoice) {
-            case "1" -> { orderByColumn = "first_name"; sortLabel = "First Name"; }
-            case "2" -> { orderByColumn = "last_name"; sortLabel = "Last Name"; }
-            case "3" -> { orderByColumn = "phone_primary"; sortLabel = "Phone Number"; }
-            case "4" -> { orderByColumn = "birthdate"; sortLabel = "Birth Date"; }
-            case "5" -> { orderByColumn = "TRIM(SUBSTRING_INDEX(address, ',', -1))"; sortLabel = "City/State"; }
-            default -> {
-                ConsoleUI.printError("Invalid column! Defaulting to First Name.");
-                sortLabel = "First Name (Default)";
-            }
+            case "1" -> orderByColumn = "first_name";
+            case "2" -> orderByColumn = "last_name";
+            case "3" -> orderByColumn = "phone_primary";
+            case "4" -> orderByColumn = "birthdate";
+            case "5" -> orderByColumn = "TRIM(SUBSTRING_INDEX(address, ',', -1))";
+            case "6" -> orderByColumn = "nickname";
+            default -> ConsoleUI.printError("Invalid column! Defaulting to First Name.");
         }
 
         System.out.println("Direction:");
