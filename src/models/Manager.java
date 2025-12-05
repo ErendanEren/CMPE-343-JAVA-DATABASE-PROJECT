@@ -43,6 +43,7 @@ public class Manager extends User {
         while (running) {
             String headerTitle = ConsoleUI.BLUE_BOLD + "Manager Panel: " + getName() + " " + getSurname() + ConsoleUI.RESET;
 
+            // Stack durumunu menüde göster
             String undoOption = deletedUsersStack.isEmpty() ? "7) Undo Last Delete (Stack Empty)" : ConsoleUI.GREEN_BOLD + "7) UNDO LAST DELETE (" + deletedUsersStack.size() + ")" + ConsoleUI.RESET;
 
             String choice = ConsoleUI.showMenu(
@@ -147,6 +148,7 @@ public class Manager extends User {
             return;
         }
 
+        
         User userBackup = getUserById(targetId);
         if (userBackup == null) {
             ConsoleUI.printError("User ID not found. Cannot delete.");
@@ -155,6 +157,7 @@ public class Manager extends User {
 
         System.out.print("Are you sure you want to fire " + userBackup.getName() + "? (yes/no): ");
         if (!scanner.nextLine().trim().equalsIgnoreCase("yes")) return;
+
 
         String sql = "DELETE FROM users WHERE user_id = ?";
 
@@ -393,7 +396,7 @@ public class Manager extends User {
     /**
      * Displays comprehensive statistical information about the contacts.
      * <p>
-     * Provides analytics such as total count, age statistics (average, youngest, oldest),
+     * Provides analytics such as total count, LinkedIn usage, age statistics (average, youngest, oldest),
      * and identifies the most frequently occurring first and last names.
      * </p>
      *
@@ -403,28 +406,37 @@ public class Manager extends User {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.BLUE_BOLD + "--- System Statistics & Analytics ---" + ConsoleUI.RESET);
 
+
         String sqlTotal = "SELECT COUNT(*) as total FROM contacts";
+        String sqlLinkedin = "SELECT COUNT(*) as linked FROM contacts WHERE linkedinUrl IS NOT NULL AND linkedinUrl != ''";
+
 
         String sqlAvgAge = "SELECT AVG(TIMESTAMPDIFF(YEAR, birthdate, CURDATE())) as avg_age FROM contacts WHERE birthdate IS NOT NULL";
-        String sqlYoungest = "SELECT first_name, last_name, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate DESC LIMIT 1";
-        String sqlOldest = "SELECT first_name, last_name, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate ASC LIMIT 1";
+        String sqlYoungest = "SELECT name, surname, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate DESC LIMIT 1";
+        String sqlOldest = "SELECT name, surname, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate ASC LIMIT 1";
 
-        String sqlMostSharedName = "SELECT first_name, COUNT(*) as cnt FROM contacts GROUP BY first_name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
-        String sqlMostSharedSurname = "SELECT last_name, COUNT(*) as cnt FROM contacts GROUP BY last_name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
+
+        String sqlMostSharedName = "SELECT name, COUNT(*) as cnt FROM contacts GROUP BY name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
+        String sqlMostSharedSurname = "SELECT surname, COUNT(*) as cnt FROM contacts GROUP BY surname HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
 
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement()) {
+
 
             ResultSet rs = stmt.executeQuery(sqlTotal);
             if (rs.next()) System.out.println("Total Contacts: " + ConsoleUI.CYAN_BOLD + rs.getInt("total") + ConsoleUI.RESET);
             rs.close();
 
+            rs = stmt.executeQuery(sqlLinkedin);
+            if (rs.next()) System.out.println("With LinkedIn: " + ConsoleUI.CYAN_BOLD + rs.getInt("linked") + ConsoleUI.RESET);
+            rs.close();
+
             System.out.println("--------------------------------");
+
 
             rs = stmt.executeQuery(sqlAvgAge);
             if (rs.next()) {
                 double avg = rs.getDouble("avg_age");
-
                 if (!rs.wasNull()) {
                     System.out.printf("Average Age: " + ConsoleUI.YELLOW_BOLD + "%.1f years" + ConsoleUI.RESET + "%n", avg);
                 } else {
@@ -433,27 +445,30 @@ public class Manager extends User {
             }
             rs.close();
 
+
             rs = stmt.executeQuery(sqlYoungest);
             if (rs.next()) {
                 System.out.println("Youngest Contact: " + ConsoleUI.GREEN_BOLD +
-                        rs.getString("first_name") + " " + rs.getString("last_name") +
+                        rs.getString("name") + " " + rs.getString("surname") +
                         " (" + rs.getDate("birthdate") + ")" + ConsoleUI.RESET);
             }
             rs.close();
 
+
             rs = stmt.executeQuery(sqlOldest);
             if (rs.next()) {
                 System.out.println("Oldest Contact:   " + ConsoleUI.RED_BOLD +
-                        rs.getString("first_name") + " " + rs.getString("last_name") +
+                        rs.getString("name") + " " + rs.getString("surname") +
                         " (" + rs.getDate("birthdate") + ")" + ConsoleUI.RESET);
             }
             rs.close();
 
             System.out.println("--------------------------------");
 
+
             rs = stmt.executeQuery(sqlMostSharedName);
             if (rs.next()) {
-                System.out.println("Most Shared Name: " + ConsoleUI.CYAN_BOLD + rs.getString("first_name") +
+                System.out.println("Most Shared Name: " + ConsoleUI.CYAN_BOLD + rs.getString("name") +
                         ConsoleUI.RESET + " (Shared by " + rs.getInt("cnt") + " individuals)");
             } else {
                 System.out.println("Most Shared Name: None (All unique)");
@@ -462,7 +477,7 @@ public class Manager extends User {
 
             rs = stmt.executeQuery(sqlMostSharedSurname);
             if (rs.next()) {
-                System.out.println("Most Shared Surname: " + ConsoleUI.CYAN_BOLD + rs.getString("last_name") +
+                System.out.println("Most Shared Surname: " + ConsoleUI.CYAN_BOLD + rs.getString("surname") +
                         ConsoleUI.RESET + " (Shared by " + rs.getInt("cnt") + " individuals)");
             } else {
                 System.out.println("Most Shared Surname: None (All unique)");
