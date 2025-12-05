@@ -206,7 +206,6 @@ public class Tester extends User {
      */
     private void printResultSetTable(ResultSet rs) {
         try {
-            // Tablo genişliğini biraz artırdık çünkü yeni sütun ekliyoruz
             String line = "----------------------------------------------------------------------------------------------------------------------------------------------------------------";
 
             System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
@@ -236,7 +235,6 @@ public class Tester extends User {
                 String address = rs.getString("address");
                 String email = rs.getString("email");
 
-                // Birleştirme ve Null Kontrolleri
                 String fullName = first + (middle != null && !middle.isEmpty() ? " " + middle : "");
 
                 if (nick == null) nick = "-";
