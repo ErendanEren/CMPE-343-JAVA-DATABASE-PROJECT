@@ -206,7 +206,7 @@ public class Tester extends User {
      */
     private void printResultSetTable(ResultSet rs) {
         try {
-            // Tablo genişliğini biraz artırdık çünkü yeni sütun ekliyoruz
+
             String line = "----------------------------------------------------------------------------------------------------------------------------------------------------------------";
 
             System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
@@ -236,7 +236,7 @@ public class Tester extends User {
                 String address = rs.getString("address");
                 String email = rs.getString("email");
 
-                // Birleştirme ve Null Kontrolleri
+
                 String fullName = first + (middle != null && !middle.isEmpty() ? " " + middle : "");
 
                 if (nick == null) nick = "-";
@@ -277,18 +277,17 @@ public class Tester extends User {
      * @param scanner {@code Scanner } object is used to receive input.
      * @author Arda Dulger
      */
-
     protected void searchContacts(Scanner scanner) {
         boolean searching = true;
         while (searching) {
             ConsoleUI.clearConsole();
 
             System.out.println(ConsoleUI.YELLOW_BOLD + "=== Search Contacts (Tester) ===" + ConsoleUI.RESET);
-            System.out.println("1) Search by First Name (Partial)");
+            System.out.println("1) Search by First(+Mid) Name (Partial)");
             System.out.println("2) Search by Last Name (Partial)");
             System.out.println("3) Search by Phone Number (Validated)");
             System.out.println("4) [Multi] Name AND Birth Month");
-            System.out.println("5) [Multi] Lastname AND City/Address");
+            System.out.println("5) [Multi] Lastname AND City");
             System.out.println("6) [Multi] Phone Part AND Email Part");
             System.out.println("0) Back to Tester Menu");
             System.out.print("Select search type: ");
@@ -298,9 +297,9 @@ public class Tester extends User {
 
             switch (choice) {
                 case "1" -> {
-                    System.out.print("Enter first name (or part of it): ");
-                    String firstNameQuery = scanner.nextLine();
-                    results = searchDAO.searchByFirstName(firstNameQuery);
+                    System.out.print("Enter first name (or part of it or middle name): ");
+                    String NameQuery = scanner.nextLine();
+                    results = searchDAO.searchByFirstOrMiddleName(NameQuery);
                 }
                 case "2" -> {
                     System.out.print("Enter last name (or part of it): ");
@@ -317,7 +316,7 @@ public class Tester extends User {
                     }
                 }
                 case "4" -> {
-                    System.out.print("Enter name: ");
+                    System.out.print("Enter name(First or Middle): ");
                     String name = scanner.nextLine();
                     System.out.print("Enter birth month (1-12): ");
                     try {
@@ -334,7 +333,7 @@ public class Tester extends User {
                 case "5" -> {
                     System.out.print("Enter lastname: ");
                     String lname = scanner.nextLine();
-                    System.out.print("Enter city/address part: ");
+                    System.out.print("Enter city part: ");
                     String city = scanner.nextLine();
                     results = searchDAO.searchByLastnameAndCity(lname, city);
                 }
@@ -378,9 +377,9 @@ public class Tester extends User {
         System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
         System.out.printf(
                 ConsoleUI.YELLOW_BOLD +
-                        "%-4s %-15s %-15s %-15s %-12s %-25s %-25s%n" +
+                        "%-4s %-22s %-15s %-15s %-12s %-25s %-25s%n" +
                         ConsoleUI.RESET,
-                "ID", "First Name", "Last Name", "Phone", "Birthdate", "Address", "Email"
+                "ID", "First(+Mid) Name", "Last Name", "Phone", "Birthdate", "Address", "Email"
         );
         System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
 
@@ -389,11 +388,13 @@ public class Tester extends User {
         } else {
             for (Contact c : contacts) {
                 String birthStr = (c.getBirthdate() == null) ? "-" : c.getBirthdate().toString();
-
+                String firstName = c.getName();
+                String middleName = c.getMiddleName();
+                String fullName = firstName + (middleName != null && !middleName.isEmpty() ? " " + middleName : "");
                 System.out.printf(
-                        "%-4d %-15s %-15s %-15s %-12s %-25s %-25s%n",
+                        "%-4d %-22s %-15s %-15s %-12s %-25s %-25s%n",
                         c.getContactId(),
-                        c.getName(),
+                        fullName,
                         c.getSurname(),
                         c.getPrimaryPhone(),
                         birthStr,
