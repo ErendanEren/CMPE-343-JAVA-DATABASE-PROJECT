@@ -42,8 +42,7 @@ public class Manager extends User {
 
         while (running) {
             String headerTitle = ConsoleUI.BLUE_BOLD + "Manager Panel: " + getName() + " " + getSurname() + ConsoleUI.RESET;
-
-            // Stack durumunu menüde göster
+            
             String undoOption = deletedUsersStack.isEmpty() ? "7) Undo Last Delete (Stack Empty)" : ConsoleUI.GREEN_BOLD + "7) UNDO LAST DELETE (" + deletedUsersStack.size() + ")" + ConsoleUI.RESET;
 
             String choice = ConsoleUI.showMenu(
