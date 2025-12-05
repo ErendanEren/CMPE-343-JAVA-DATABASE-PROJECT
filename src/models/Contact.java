@@ -10,10 +10,7 @@ public class Contact {
     private String name;
     private String surname;
     private String nickname;
-
     private String primaryPhone;
-    private String secondaryPhone;   // NEW
-
     private Date birthdate;
     private String email;
     private String address;
@@ -22,17 +19,10 @@ public class Contact {
     private String linkedinUrl;
 
 
-    private String middleName;       // NEW
-    private String linkedinUrl;      // NEW
-
     private Date created_at;
     private Date updated_at;
 
     // ====== CONSTRUCTORS ======
-
-    // Parametresiz ctor – Tester.fetchContactsFromQuery() için gerekli
-    public Contact() {
-    }
 
     public Contact(int contactId, int userId,
                    String name, String surname, String nickname,
@@ -85,14 +75,6 @@ public class Contact {
         this.surname = surname;
     }
 
-    public String getNickname() {
-        return nickname;
-    }
-
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
-    }
-
     public String getPrimaryPhone() {
         return primaryPhone;
     }
@@ -101,21 +83,9 @@ public class Contact {
         this.primaryPhone = primaryPhone;
     }
 
-    public String getSecondaryPhone() {         // NEW
-        return secondaryPhone;
-    }
+    public Date getBirthdate() {return birthdate;}
 
-    public void setSecondaryPhone(String secondaryPhone) { // NEW
-        this.secondaryPhone = secondaryPhone;
-    }
-
-    public Date getBirthdate() {
-        return birthdate;
-    }
-
-    public void setBirthdate(Date birthdate) {
-        this.birthdate = birthdate;
-    }
+    public void setBirthdate(Date birthdate) {this.birthdate = birthdate;}
 
     public String getEmail() {
         return email;
@@ -131,22 +101,6 @@ public class Contact {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public String getMiddleName() {             // NEW
-        return middleName;
-    }
-
-    public void setMiddleName(String middleName) { // NEW
-        this.middleName = middleName;
-    }
-
-    public String getLinkedinUrl() {            // NEW
-        return linkedinUrl;
-    }
-
-    public void setLinkedinUrl(String linkedinUrl) { // NEW
-        this.linkedinUrl = linkedinUrl;
     }
 
     public Date getCreated_at() {

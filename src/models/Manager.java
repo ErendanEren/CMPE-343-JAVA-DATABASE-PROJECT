@@ -31,7 +31,6 @@ public class Manager extends User {
      * The menu loop continues until the user chooses to logout.
      * <p>
      * This method acts as the main controller for the Manager's session.
-     * It dynamically displays the "Undo" option based on the stack's state.
      * </p>
      *
      * @param scanner The Scanner object used to read user input from the console.
@@ -84,8 +83,8 @@ public class Manager extends User {
     /**
      * Restores the most recently deleted user from the stack back to the database.
      * <p>
-     * It retrieves the last {@code User} object pushed onto the stack (LIFO) and executes an INSERT statement.
-     * If the restoration fails (e.g. username taken), the user is pushed back onto the stack to prevent data loss.
+     * It retrieves the last {@code User} object pushed onto the stack and executes an INSERT statement.
+     * If the restoration fails, the user is pushed back onto the stack to prevent data loss.
      * </p>
      *
      * @author Zafer Mert Serinken
@@ -124,7 +123,7 @@ public class Manager extends User {
     /**
      * Deletes a user from the system based on the provided User ID.
      * <p>
-     * Before deletion, the user data is retrieved and backed up to a Stack to enable the Undo operation.
+     * Before deletion, the user data is backed up to a Stack to enable the Undo operation.
      * Includes validation to prevent the manager from deleting their own account.
      * </p>
      *
@@ -184,7 +183,7 @@ public class Manager extends User {
      * Retrieves a User object from the database using the given User ID.
      * <p>
      * This is a helper method primarily used for backing up user data before deletion.
-     * It uses polymorphism to instantiate the correct subclass based on the role string found in DB.
+     * It uses polymorphism to instantiate the correct subclass based on the role string.
      * </p>
      *
      * @param id The unique identifier of the user to retrieve.
@@ -226,7 +225,7 @@ public class Manager extends User {
     /**
      * Lists all users currently registered in the database.
      * <p>
-     * Displays ID, Username, Name, Surname, and Role in a formatted table output using {@code printf}.
+     * Displays ID, Username, Name, Surname, and Role in a formatted table output.
      * </p>
      *
      * @author Zafer Mert Serinken
