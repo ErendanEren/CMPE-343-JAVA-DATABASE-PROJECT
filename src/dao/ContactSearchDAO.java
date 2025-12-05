@@ -23,10 +23,13 @@ public class ContactSearchDAO {
         while (rs.next()) {
             int id = rs.getInt("contact_id");
             String firstName = rs.getString("first_name");
+            String middleName = rs.getString("middle_name");
             String lastName  = rs.getString("last_name");
             String nickname  = rs.getString("nickname");
             String phone     = rs.getString("phone_primary");
+            String phoneSecondary = rs.getString("phone_secondary");
             String email     = rs.getString("email");
+            String linkedinUrl = rs.getString("linkedin_url");
             String address   = rs.getString("address");
             java.sql.Date birthdate = rs.getDate("birthdate");
 
@@ -46,7 +49,10 @@ public class ContactSearchDAO {
                     createdTs != null ? new java.sql.Date(createdTs.getTime()) : null,
                     updatedTs != null ? new java.sql.Date(updatedTs.getTime()) : null
             );
-
+            contact.setNickname(nickname);          // aslında constructor zaten alıyor ama dursun
+            contact.setMiddleName(middleName);
+            contact.setSecondaryPhone(phoneSecondary);
+            contact.setLinkedinUrl(linkedinUrl);
             contact.setBirthdate(birthdate);
             contacts.add(contact);
         }
