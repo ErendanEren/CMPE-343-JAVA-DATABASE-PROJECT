@@ -57,23 +57,37 @@ public class ContactSearchDAO {
         return contacts;
     }
 
-    public List<Contact> searchByFirstOrMiddleName(String query) {
+    public List<Contact> searchByFirstName(String nameQuery) {
         List<Contact> results = new ArrayList<>();
 
+        String sql = "SELECT * FROM contacts WHERE first_name LIKE ?";
 
-        String sql = "SELECT * FROM contacts WHERE first_name LIKE ? OR middle_name LIKE ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+
+            ps.setString(1, "%" + nameQuery + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return mapResultSetToContacts(rs);
+            }
+        } catch (SQLException e) {
+            System.err.println("Search Error (First Name): " + e.getMessage());
+
+        }
+        return results;
+    }
+    public List<Contact> searchByMiddleName(String query) {
+        List<Contact> results = new ArrayList<>();
+
+        String sql = "SELECT * FROM contacts WHERE middle_name LIKE ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            String searchPattern = "%" + query + "%";
-
-
-            pstmt.setString(1, searchPattern);
-            pstmt.setString(2, searchPattern);
+            pstmt.setString(1, "%" + query + "%");
 
             try (ResultSet rs = pstmt.executeQuery()) {
-
                 results = mapResultSetToContacts(rs);
             }
         } catch (SQLException e) {
@@ -81,7 +95,6 @@ public class ContactSearchDAO {
         }
         return results;
     }
-
     public List<Contact> searchByLastName(String query) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE last_name LIKE ?";
@@ -117,7 +130,24 @@ public class ContactSearchDAO {
         }
         return results;
     }
+    public List<Contact> searchBySecondaryPhoneNumber(String query) {
+        List<Contact> results = new ArrayList<>();
+        // Sadece phone_secondary sütununda arama yapar
+        String sql = "SELECT * FROM contacts WHERE phone_secondary LIKE ?";
 
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setString(1, "%" + query + "%");
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                results = mapResultSetToContacts(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return results;
+    }
     public List<Contact> searchByLastnameAndCity(String lastname, String city) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE last_name LIKE ? AND address LIKE ?";
@@ -165,13 +195,14 @@ public class ContactSearchDAO {
 
     public List<Contact> searchByPhonePartAndEmailPart(String phonePart, String emailPart) {
         List<Contact> results = new ArrayList<>();
-        String sql = "SELECT * FROM contacts WHERE phone_primary LIKE ? AND email LIKE ?";
+        String sql = "SELECT * FROM contacts WHERE (phone_primary LIKE ? OR phone_secondary LIKE ?) AND email LIKE ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             pstmt.setString(1, "%" + phonePart + "%");
-            pstmt.setString(2, "%" + emailPart + "%");
+            pstmt.setString(2, "%" + phonePart + "%");
+            pstmt.setString(3, "%" + emailPart + "%");
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 results = mapResultSetToContacts(rs);

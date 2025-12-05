@@ -207,14 +207,14 @@ public class Tester extends User {
     private void printResultSetTable(ResultSet rs) {
         try {
 
-            String line = "----------------------------------------------------------------------------------------------------------------------------------------------------------------";
+            String line = "-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
 
             System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
             System.out.printf(
                     ConsoleUI.YELLOW_BOLD +
-                            "%-4s %-20s %-15s %-10s %-12s %-12s %-12s %-25s %-25s%n" +
+                            "%-4s %-15s %-15s %-15s %-12s %-15s %-15s %-12s %-25s %-25s %-25s%n" +
                             ConsoleUI.RESET,
-                    "ID", "First (+Mid) Name", "Last Name", "Nickname", "Pri. Phone", "Sec. Phone", "Birthdate", "Address", "Email"
+                    "ID", "First Name","Middle Name", "Last Name", "Nickname", "Pri. Phone", "Sec. Phone", "Birthdate", "Address", "Email","LinkedIn"
             );
             System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
 
@@ -227,6 +227,7 @@ public class Tester extends User {
                 String middle = rs.getString("middle_name");
                 String last = rs.getString("last_name");
                 String nick = rs.getString("nickname");
+                String linkedin = rs.getString("linkedin_url");
                 String phone = rs.getString("phone_primary");
                 String secPhone = rs.getString("phone_secondary");
 
@@ -237,17 +238,16 @@ public class Tester extends User {
                 String email = rs.getString("email");
 
 
-                String fullName = first + (middle != null && !middle.isEmpty() ? " " + middle : "");
-
                 if (nick == null) nick = "-";
                 if (address == null) address = "-";
                 if (secPhone == null || secPhone.isEmpty()) secPhone = "-";
+                if (linkedin == null || linkedin.trim().isEmpty()) linkedin = "-";
 
                 String birthStr = (birth == null) ? "-" : birth.toString();
 
                 System.out.printf(
-                        "%-4d %-20s %-15s %-10s %-12s %-12s %-12s %-25s %-25s%n",
-                        id, fullName, last, nick, phone, secPhone, birthStr, address, email
+                        "%-4d %-15s %-15s %-15s %-12s %-15s %-15s %-12s %-25s %-25s %-25s%n",
+                        id, first,middle, last, nick, phone, secPhone, birthStr, address, email,linkedin
                 );
             }
 
@@ -283,12 +283,14 @@ public class Tester extends User {
             ConsoleUI.clearConsole();
 
             System.out.println(ConsoleUI.YELLOW_BOLD + "=== Search Contacts (Tester) ===" + ConsoleUI.RESET);
-            System.out.println("1) Search by First(+Mid) Name (Partial)");
-            System.out.println("2) Search by Last Name (Partial)");
-            System.out.println("3) Search by Phone Number (Validated)");
-            System.out.println("4) [Multi] Name AND Birth Month");
-            System.out.println("5) [Multi] Lastname AND City");
-            System.out.println("6) [Multi] Phone Part AND Email Part");
+            System.out.println("1) Search by First Name (Partial)");
+            System.out.println("2) Search by Middle Name (Partial)");
+            System.out.println("3) Search by Last Name (Partial)");
+            System.out.println("4) Search by Primary Phone  (Validated)");
+            System.out.println("5) Search by Secondary Phone (Validated)");
+            System.out.println("6) [Multi] Name AND Birth Month");
+            System.out.println("7) [Multi] Lastname AND City");
+            System.out.println("8) [Multi] Primary/Secondary Phone Part AND Email Part");
             System.out.println("0) Back to Tester Menu");
             System.out.print("Select search type: ");
 
@@ -297,51 +299,64 @@ public class Tester extends User {
 
             switch (choice) {
                 case "1" -> {
-                    System.out.print("Enter first name (or part of it or middle name): ");
-                    String NameQuery = scanner.nextLine();
-                    results = searchDAO.searchByFirstOrMiddleName(NameQuery);
+                    System.out.print("Enter first name: ");
+                    String input = scanner.nextLine().trim();
+                    results = searchDAO.searchByFirstName(scanner.nextLine());
                 }
                 case "2" -> {
-                    System.out.print("Enter last name (or part of it): ");
-                    String lastNameQuery = scanner.nextLine();
-                    results = searchDAO.searchByLastName(lastNameQuery);
+                    System.out.print("Enter middle name: ");
+                    results = searchDAO.searchByMiddleName(scanner.nextLine());
                 }
                 case "3" -> {
-                    System.out.print("Enter phone number (digits only): ");
+                    System.out.print("Enter last name: ");
+                    results = searchDAO.searchByLastName(scanner.nextLine());
+                }
+                case "4" -> {
+                    System.out.print("Enter primary phone (digits only): ");
                     String phone = scanner.nextLine();
                     if (searchDAO.isValidPhoneNumber(phone)) {
                         results = searchDAO.searchByPhoneNumber(phone);
                     } else {
-                        System.out.println("Invalid format! Phone should contain only digits/spaces.");
+                        System.out.println("Invalid format!");
                     }
                 }
-                case "4" -> {
-                    System.out.print("Enter name(First or Middle): ");
+
+                case "5" -> {
+                    System.out.print("Enter secondary phone (digits only): ");
+                    String phone = scanner.nextLine();
+                    if (searchDAO.isValidPhoneNumber(phone)) {
+                        results = searchDAO.searchBySecondaryPhoneNumber(phone);
+                    } else {
+                        System.out.println("Invalid format!");
+                    }
+                }
+
+                case "6" -> {
+
+                    System.out.print("Enter name: ");
                     String name = scanner.nextLine();
                     System.out.print("Enter birth month (1-12): ");
                     try {
                         int month = Integer.parseInt(scanner.nextLine());
-                        if (searchDAO.isValidMonth(month)) {
-                            results = searchDAO.searchByNameAndBirthMonth(name, month);
-                        } else {
-                            System.out.println("Invalid month! Please enter between 1-12.");
-                        }
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid input! Please enter a number for month.");
-                    }
+                        if (searchDAO.isValidMonth(month)) results = searchDAO.searchByNameAndBirthMonth(name, month);
+                        else System.out.println("Invalid month!");
+                    } catch (NumberFormatException e) { System.out.println("Invalid input!"); }
                 }
-                case "5" -> {
+                case "7" -> {
+
                     System.out.print("Enter lastname: ");
                     String lname = scanner.nextLine();
-                    System.out.print("Enter city part: ");
+                    System.out.print("Enter city: ");
                     String city = scanner.nextLine();
                     results = searchDAO.searchByLastnameAndCity(lname, city);
                 }
-                case "6" -> {
-                    System.out.print("Enter phone part (e.g. 555): ");
+                case "8" -> {
+
+                    System.out.print("Enter Pri/Sec phone part: ");
                     String phonePart = scanner.nextLine();
-                    System.out.print("Enter email part (e.g. gmail): ");
+                    System.out.print("Enter email part: ");
                     String emailPart = scanner.nextLine();
+
                     results = searchDAO.searchByPhonePartAndEmailPart(phonePart, emailPart);
                 }
                 case "0" -> searching = false;
@@ -372,14 +387,13 @@ public class Tester extends User {
      * @author Arda Dulger
      */
     private void printSearchResults(List<Contact> contacts) {
-        String line = "--------------------------------------------------------------------------------------------------------------";
+
+        String line = "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
 
         System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
-        System.out.printf(
-                ConsoleUI.YELLOW_BOLD +
-                        "%-4s %-22s %-15s %-15s %-12s %-25s %-25s%n" +
-                        ConsoleUI.RESET,
-                "ID", "First(+Mid) Name", "Last Name", "Phone", "Birthdate", "Address", "Email"
+        System.out.printf(ConsoleUI.YELLOW_BOLD +
+                        "%-4s %-15s %-15s %-15s %-12s %-15s %-15s %-12s %-25s %-25s %-25s%n" + ConsoleUI.RESET,
+                "ID", "First Name", "Middle Name", "Last Name","Nickname","Pri. Phone", "Sec. Phone", "Birthdate", "Address", "Email", "LinkedIn"
         );
         System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
 
@@ -388,25 +402,29 @@ public class Tester extends User {
         } else {
             for (Contact c : contacts) {
                 String birthStr = (c.getBirthdate() == null) ? "-" : c.getBirthdate().toString();
-                String firstName = c.getName();
+
                 String middleName = c.getMiddleName();
-                String fullName = firstName + (middleName != null && !middleName.isEmpty() ? " " + middleName : "");
+                if (middleName == null || middleName.trim().isEmpty()) middleName = "-";
+
+                String secPhone = c.getSecondaryPhone();
+                if (secPhone == null || secPhone.trim().isEmpty()) secPhone = "-";
+
+                String linkedIn = c.getLinkedinUrl();
+                if (linkedIn == null || linkedIn.trim().isEmpty()) linkedIn = "-";
+
+                String nickname = c.getNickname();
+                if (nickname == null || nickname.trim().isEmpty()) nickname = "-";
+
                 System.out.printf(
-                        "%-4d %-22s %-15s %-15s %-12s %-25s %-25s%n",
-                        c.getContactId(),
-                        fullName,
-                        c.getSurname(),
-                        c.getPrimaryPhone(),
-                        birthStr,
-                        c.getAddress(),
-                        c.getEmail()
+                        "%-4d %-15s %-15s %-15s %-12s %-15s %-15s %-12s %-25s %-25s %-25s%n",
+                        c.getContactId(), c.getName(), middleName, c.getSurname(), nickname,
+                        c.getPrimaryPhone(), secPhone, birthStr, c.getAddress(), c.getEmail(), linkedIn
                 );
             }
         }
 
         System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
     }
-
     /**
      * Sorts and displays contacts based on user-selected criteria.
      * <p>
