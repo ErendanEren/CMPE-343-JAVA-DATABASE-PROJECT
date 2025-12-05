@@ -36,7 +36,7 @@ public class Junior extends Tester {
 
         while (running) {
             String choice = ConsoleUI.showMenu(
-                    ConsoleUI.BLUE_BOLD + "Junior Developer Menu" + ConsoleUI.RESET,
+                    ConsoleUI.BLUE_BOLD + "Junior Panel: " + getName() + " " + getSurname() + ConsoleUI.RESET,
                     new String[]{
                             "1) Change password",
                             "2) List all contacts",

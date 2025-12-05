@@ -47,7 +47,7 @@ public class Senior extends Junior {
 
         while (running) {
             String choice = ConsoleUI.showMenu(
-                    ConsoleUI.BLUE_BOLD + "Senior Developer Menu" + ConsoleUI.RESET,
+                    ConsoleUI.BLUE_BOLD + "Senior Panel: " + getName() + " " + getSurname() + ConsoleUI.RESET,
                     new String[]{
                             "1) Change password",
                             "2) List all contacts",
