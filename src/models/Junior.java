@@ -18,7 +18,7 @@ import java.util.Stack;
  * It also supports an <b>UNDO</b> mechanism for the update operations using a Stack.
  * </p>
  *
- * @author Arda Dulger & selcukaloba
+ * @author Arda Dulger & Selcuk Aloba
  */
 public class Junior extends Tester {
 
@@ -29,14 +29,20 @@ public class Junior extends Tester {
         String firstName;
         String lastName;
         String phonePrimary;
+        String phoneSecondary;
         String email;
+        String address;
+        String linkedinUrl;
 
-        public ContactBackup(int id, String first, String last, String phone, String mail) {
+        public ContactBackup(int id, String first, String last, String phone, String secPhone, String mail, String addr, String linkedin) {
             this.contactId = id;
             this.firstName = first;
             this.lastName = last;
             this.phonePrimary = phone;
+            this.phoneSecondary = secPhone;
             this.email = mail;
+            this.address = addr;
+            this.linkedinUrl = linkedin;
         }
     }
 
@@ -45,7 +51,7 @@ public class Junior extends Tester {
         this.setRole("Junior Developer");
     }
 
-    public Junior(int userId, String username, String name, String surname, Connection connection) {
+    public Junior(int userId, String username, String name, String surname) {
         super(userId, username, name, surname);
         this.setRole("Junior Developer");
     }
@@ -88,17 +94,9 @@ public class Junior extends Tester {
 
     /**
      * Updates an existing contact's information in the database.
-     * <p>
-     * Logic:
-     * 1. Asks for the Contact ID.
-     * 2. Checks if the ID exists.
-     * 3. Retrieves current data and <b>SAVES IT TO STACK</b> (Backup).
-     * 4. Asks for new values (Pressing Enter keeps the current value).
-     * 5. Updates the record in the database.
-     * </p>
-     *
-     * @param scanner Scanner for user input
-     * @author Arda Dulger & selcukaloba
+     * Supports updating ALL fields including new ones (Secondary Phone, Address, LinkedIn).
+     * @author selcukaloba
+     * @author dulgerarda
      */
     public void updateContact(Scanner scanner) {
         ConsoleUI.clearConsole();
@@ -117,7 +115,7 @@ public class Junior extends Tester {
 
         String selectSql = "SELECT * FROM contacts WHERE contact_id = ?";
 
-        String currentName = "", currentSurname = "", currentPhone = "", currentEmail = "";
+        String curName = "", curSurname = "", curPhone = "", curSecPhone = "", curEmail = "", curAddr = "", curLinkedin = "";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(selectSql)) {
@@ -125,10 +123,13 @@ public class Junior extends Tester {
             ps.setInt(1, contactId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    currentName = rs.getString("first_name");
-                    currentSurname = rs.getString("last_name");
-                    currentPhone = rs.getString("phone_primary");
-                    currentEmail = rs.getString("email");
+                    curName = rs.getString("first_name");
+                    curSurname = rs.getString("last_name");
+                    curPhone = rs.getString("phone_primary");
+                    curSecPhone = rs.getString("phone_secondary");
+                    curEmail = rs.getString("email");
+                    curAddr = rs.getString("address");
+                    curLinkedin = rs.getString("linkedin_url");
                 } else {
                     ConsoleUI.printError("Contact with ID " + contactId + " not found!");
                     return;
@@ -139,29 +140,45 @@ public class Junior extends Tester {
             return;
         }
 
+        if (curSecPhone == null) curSecPhone = "";
+        if (curAddr == null) curAddr = "";
+        if (curLinkedin == null) curLinkedin = "";
 
-        ContactBackup backup = new ContactBackup(contactId, currentName, currentSurname, currentPhone, currentEmail);
+
+        ContactBackup backup = new ContactBackup(contactId, curName, curSurname, curPhone, curSecPhone, curEmail, curAddr, curLinkedin);
         undoStack.push(backup);
 
         System.out.println("\n" + ConsoleUI.CYAN_BOLD + "Enter new values (Press ENTER to keep current value):" + ConsoleUI.RESET);
 
-        System.out.println("First Name (" + currentName + "): ");
+        System.out.println("First Name (" + curName + "): ");
         String newName = scanner.nextLine().trim();
-        if (newName.isEmpty()) newName = currentName;
+        if (newName.isEmpty()) newName = curName;
 
-        System.out.println("Last Name (" + currentSurname + "): ");
+        System.out.println("Last Name (" + curSurname + "): ");
         String newSurname = scanner.nextLine().trim();
-        if (newSurname.isEmpty()) newSurname = currentSurname;
+        if (newSurname.isEmpty()) newSurname = curSurname;
 
-        System.out.println("Phone (" + currentPhone + "): ");
+        System.out.println("Pri. Phone (" + curPhone + "): ");
         String newPhone = scanner.nextLine().trim();
-        if (newPhone.isEmpty()) newPhone = currentPhone;
+        if (newPhone.isEmpty()) newPhone = curPhone;
 
-        System.out.println("Email (" + currentEmail + "): ");
+        System.out.println("Sec. Phone (" + curSecPhone + "): ");
+        String newSecPhone = scanner.nextLine().trim();
+        if (newSecPhone.isEmpty()) newSecPhone = curSecPhone;
+
+        System.out.println("Email (" + curEmail + "): ");
         String newEmail = scanner.nextLine().trim();
-        if (newEmail.isEmpty()) newEmail = currentEmail;
+        if (newEmail.isEmpty()) newEmail = curEmail;
 
-        String updateSql = "UPDATE contacts SET first_name=?, last_name=?, phone_primary=?, email=?, updated_at=CURRENT_TIMESTAMP WHERE contact_id=?";
+        System.out.println("Address (" + curAddr + "): ");
+        String newAddr = scanner.nextLine().trim();
+        if (newAddr.isEmpty()) newAddr = curAddr;
+
+        System.out.println("LinkedIn (" + curLinkedin + "): ");
+        String newLinkedin = scanner.nextLine().trim();
+        if (newLinkedin.isEmpty()) newLinkedin = curLinkedin;
+
+        String updateSql = "UPDATE contacts SET first_name=?, last_name=?, phone_primary=?, phone_secondary=?, email=?, address=?, linkedin_url=?, updated_at=CURRENT_TIMESTAMP WHERE contact_id=?";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(updateSql)) {
@@ -169,8 +186,11 @@ public class Junior extends Tester {
             ps.setString(1, newName);
             ps.setString(2, newSurname);
             ps.setString(3, newPhone);
-            ps.setString(4, newEmail);
-            ps.setInt(5, contactId);
+            ps.setString(4, newSecPhone.isEmpty() ? null : newSecPhone);
+            ps.setString(5, newEmail.isEmpty() ? null : newEmail);
+            ps.setString(6, newAddr.isEmpty() ? null : newAddr);
+            ps.setString(7, newLinkedin.isEmpty() ? null : newLinkedin);
+            ps.setInt(8, contactId);
 
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected > 0) {
@@ -189,7 +209,8 @@ public class Junior extends Tester {
 
     /**
      * Reverts the last update operation.
-     * Pops the previous state from the stack and updates the database with old values.
+     * @author selcukaloba
+     * @author dulgerarda
      */
     public void undoLastUpdate() {
         ConsoleUI.clearConsole();
@@ -206,7 +227,7 @@ public class Junior extends Tester {
         System.out.println("Restoring contact ID: " + oldData.contactId);
         System.out.println("Reverting to: " + oldData.firstName + " " + oldData.lastName);
 
-        String sql = "UPDATE contacts SET first_name=?, last_name=?, phone_primary=?, email=?, updated_at=CURRENT_TIMESTAMP WHERE contact_id=?";
+        String sql = "UPDATE contacts SET first_name=?, last_name=?, phone_primary=?, phone_secondary=?, email=?, address=?, linkedin_url=?, updated_at=CURRENT_TIMESTAMP WHERE contact_id=?";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -214,8 +235,11 @@ public class Junior extends Tester {
             ps.setString(1, oldData.firstName);
             ps.setString(2, oldData.lastName);
             ps.setString(3, oldData.phonePrimary);
-            ps.setString(4, oldData.email);
-            ps.setInt(5, oldData.contactId);
+            ps.setString(4, oldData.phoneSecondary);
+            ps.setString(5, oldData.email);
+            ps.setString(6, oldData.address);
+            ps.setString(7, oldData.linkedinUrl);
+            ps.setInt(8, oldData.contactId);
 
             int rows = ps.executeUpdate();
             if (rows > 0) {

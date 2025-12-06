@@ -9,13 +9,33 @@ import java.util.List;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-
+/**
+ * Data Access Object (DAO) class responsible for performing search operations on Contact data.
+ * <p>
+ * This class provides methods to search contacts by various criteria such as name, phone,
+ * address, and complex combinations (e.g., name and birth month). It handles the database
+ * connection and maps SQL results to {@link Contact} objects.
+ * </p>
+ *
+ * @author Eren Çakır Bircan, Arda Dülger
+ */
 public class ContactSearchDAO {
 
     public ContactSearchDAO() {
     }
 
-
+    /**
+     * Maps a generic SQL {@code ResultSet} to a list of {@link Contact} objects.
+     * <p>
+     * This helper method iterates through the ResultSet, extracts column values including
+     * primary/secondary phones and timestamps, and populates Contact instances.
+     * </p>
+     *
+     * @param rs The {@code ResultSet} returned from a database query.
+     * @return A {@code List} of {@link Contact} objects populated with the data.
+     * @throws SQLException If a database access error occurs or column labels are invalid.
+     * @author Eren Çakır Bircan
+     */
     private List<Contact> mapResultSetToContacts(ResultSet rs) throws SQLException {
         List<Contact> contacts = new ArrayList<>();
         while (rs.next()) {
@@ -56,7 +76,16 @@ public class ContactSearchDAO {
         }
         return contacts;
     }
-
+    /**
+     * Searches for contacts where the first name matches the given query pattern.
+     * <p>
+     * This method uses the SQL {@code LIKE} operator with wildcards to find partial matches.
+     * </p>
+     *
+     * @param nameQuery The partial or full string to search for within the first name.
+     * @return A {@code List} of {@link Contact} objects matching the criteria.
+     * @author Eren Çakır Bircan, Arda Dülger
+     */
     public List<Contact> searchByFirstName(String nameQuery) {
         List<Contact> results = new ArrayList<>();
 
@@ -77,6 +106,13 @@ public class ContactSearchDAO {
         }
         return results;
     }
+    /**
+     * Searches for contacts where the middle name matches the given query pattern.
+     *
+     * @param query The partial or full string to search for within the middle name.
+     * @return A {@code List} of {@link Contact} objects matching the criteria.
+     * @author Eren Çakır Bircan, Arda Dülger
+     */
     public List<Contact> searchByMiddleName(String query) {
         List<Contact> results = new ArrayList<>();
 
@@ -95,6 +131,13 @@ public class ContactSearchDAO {
         }
         return results;
     }
+    /**
+     * Searches for contacts where the last name matches the given query pattern.
+     *
+     * @param query The partial or full string to search for within the last name.
+     * @return A {@code List} of {@link Contact} objects matching the criteria.
+     * @author Eren Çakır Bircan, Arda Dülger
+     */
     public List<Contact> searchByLastName(String query) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE last_name LIKE ?";
@@ -112,7 +155,13 @@ public class ContactSearchDAO {
         }
         return results;
     }
-
+    /**
+     * Searches for contacts based on their primary phone number.
+     *
+     * @param query The phone number (or part of it) to search for.
+     * @return A {@code List} of {@link Contact} objects matching the phone number.
+     * @author Eren Çakır Bircan, Arda Dülger
+     */
     public List<Contact> searchByPhoneNumber(String query) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE phone_primary LIKE ?";
@@ -130,9 +179,19 @@ public class ContactSearchDAO {
         }
         return results;
     }
+    /**
+     * Searches for contacts based on their secondary phone number.
+     * <p>
+     * Specifically queries the 'phone_secondary' column using the LIKE operator.
+     * </p>
+     *
+     * @param query The secondary phone number (or part of it) to search for.
+     * @return A {@code List} of {@link Contact} objects matching the secondary phone number.
+     * @author Eren Çakır Bircan, Arda Dülger
+     */
     public List<Contact> searchBySecondaryPhoneNumber(String query) {
         List<Contact> results = new ArrayList<>();
-        // Sadece phone_secondary sütununda arama yapar
+
         String sql = "SELECT * FROM contacts WHERE phone_secondary LIKE ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
@@ -148,6 +207,17 @@ public class ContactSearchDAO {
         }
         return results;
     }
+    /**
+     * Performs a multi-criteria search using both last name and city (address).
+     * <p>
+     * A contact must match BOTH the last name pattern AND the address pattern to be returned.
+     * </p>
+     *
+     * @param lastname The partial string for the last name.
+     * @param city The partial string for the address/city.
+     * @return A {@code List} of matching {@link Contact} objects.
+     * @author Eren Çakır Bircan, Arda Dülger
+     */
     public List<Contact> searchByLastnameAndCity(String lastname, String city) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE last_name LIKE ? AND address LIKE ?";
@@ -166,7 +236,18 @@ public class ContactSearchDAO {
         }
         return results;
     }
-
+    /**
+     * Searches for contacts matching a name (First or Middle) and a specific birth month.
+     * <p>
+     * This method extracts the month part of the 'birthdate' column using the SQL
+     * {@code MONTH()} function.
+     * </p>
+     *
+     * @param name The name to search for (checks both first and middle names).
+     * @param month The integer representation of the month (1-12).
+     * @return A {@code List} of matching {@link Contact} objects.
+     * @author Eren Çakır Bircan, Arda Dülger
+     */
     public List<Contact> searchByNameAndBirthMonth(String name, int month) {
         List<Contact> results = new ArrayList<>();
 
@@ -192,7 +273,17 @@ public class ContactSearchDAO {
         }
         return results;
     }
-
+    /**
+     * Searches for contacts using partial matches for phone numbers and email addresses.
+     * <p>
+     * The logic checks if (Primary Phone OR Secondary Phone matches) AND (Email matches).
+     * </p>
+     *
+     * @param phonePart The partial phone number string.
+     * @param emailPart The partial email string.
+     * @return A {@code List} of matching {@link Contact} objects.
+     * @author  Arda Dülger
+     */
     public List<Contact> searchByPhonePartAndEmailPart(String phonePart, String emailPart) {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts WHERE (phone_primary LIKE ? OR phone_secondary LIKE ?) AND email LIKE ?";
@@ -212,7 +303,12 @@ public class ContactSearchDAO {
         }
         return results;
     }
-
+    /**
+     * Retrieves all contact records from the database.
+     *
+     * @return A {@code List} containing all {@link Contact} objects in the database.
+     * @author Eren Çakır Bircan
+     */
     public List<Contact> getAllContacts() {
         List<Contact> results = new ArrayList<>();
         String sql = "SELECT * FROM contacts";
@@ -227,11 +323,23 @@ public class ContactSearchDAO {
         }
         return results;
     }
-
+    /**
+     * Validates if the provided phone string contains only allowed characters (digits, +, -, space).
+     *
+     * @param phone The phone string to validate.
+     * @return {@code true} if valid, {@code false} otherwise.
+     * @author Eren Çakır Bircan
+     */
     public boolean isValidPhoneNumber(String phone) {
         return phone.matches("[0-9\\+\\-\\s]*");
     }
-
+    /**
+     * Validates if the provided string follows the ISO Local Date format (YYYY-MM-DD).
+     *
+     * @param dateStr The date string to check.
+     * @return {@code true} if the date format is valid.
+     * @author Eren Çakır Bircan
+     */
     public boolean isValidDate(String dateStr) {
         try {
             LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
@@ -240,7 +348,13 @@ public class ContactSearchDAO {
             return false;
         }
     }
-
+    /**
+     * Validates if the provided integer is a valid month (1-12).
+     *
+     * @param month The month number to check.
+     * @return {@code true} if the month is between 1 and 12 inclusive.
+     * @author Eren Çakır Bircan
+     */
     public boolean isValidMonth(int month) {
         return month >= 1 && month <= 12;
     }

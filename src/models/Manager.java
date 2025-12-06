@@ -26,6 +26,20 @@ public class Manager extends User {
      */
     private Stack<User> deletedUsersStack = new Stack<>();
 
+    public Manager() {
+        super();
+        this.setRole("Manager");
+    }
+
+    public Manager(int userId, String username, String name, String surname) {
+        super();
+        this.setUserId(userId);
+        this.setUsername(username);
+        this.setName(name);
+        this.setSurname(surname);
+        this.setRole("Manager");
+    }
+
     /**
      * Displays the main menu for the Manager role and handles user input.
      * The menu loop continues until the user chooses to logout.
@@ -43,7 +57,6 @@ public class Manager extends User {
         while (running) {
             String headerTitle = ConsoleUI.BLUE_BOLD + "Manager Panel: " + getName() + " " + getSurname() + ConsoleUI.RESET;
 
-            // Stack durumunu menüde göster
             String undoOption = deletedUsersStack.isEmpty() ? "7) Undo Last Delete (Stack Empty)" : ConsoleUI.GREEN_BOLD + "7) UNDO LAST DELETE (" + deletedUsersStack.size() + ")" + ConsoleUI.RESET;
 
             String choice = ConsoleUI.showMenu(
@@ -148,7 +161,6 @@ public class Manager extends User {
             return;
         }
 
-        // BACKUP (Yedekle)
         User userBackup = getUserById(targetId);
         if (userBackup == null) {
             ConsoleUI.printError("User ID not found. Cannot delete.");
@@ -158,7 +170,6 @@ public class Manager extends User {
         System.out.print("Are you sure you want to fire " + userBackup.getName() + "? (yes/no): ");
         if (!scanner.nextLine().trim().equalsIgnoreCase("yes")) return;
 
-        // DELETE (Sil)
         String sql = "DELETE FROM users WHERE user_id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -406,23 +417,21 @@ public class Manager extends User {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.BLUE_BOLD + "--- System Statistics & Analytics ---" + ConsoleUI.RESET);
 
-        // 1. Temel Sayılar
         String sqlTotal = "SELECT COUNT(*) as total FROM contacts";
         String sqlLinkedin = "SELECT COUNT(*) as linked FROM contacts WHERE linkedin_url IS NOT NULL AND linkedin_url != ''";
 
-        // 2. Yaş Analizleri (MySQL Fonksiyonları) - Sütun adı `birthdate`
-        String sqlAvgAge = "SELECT AVG(TIMESTAMPDIFF(YEAR, birthdate, CURDATE())) as avg_age FROM contacts WHERE birthdate IS NOT NULL";
-        String sqlYoungest = "SELECT name, surname, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate DESC LIMIT 1";
-        String sqlOldest = "SELECT name, surname, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate ASC LIMIT 1";
 
-        // 3. İsim Paylaşımı (En sık tekrarlanan isimler)
-        String sqlMostSharedName = "SELECT name, COUNT(*) as cnt FROM contacts GROUP BY name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
-        String sqlMostSharedSurname = "SELECT surname, COUNT(*) as cnt FROM contacts GROUP BY surname HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
+        String sqlAvgAge = "SELECT AVG(TIMESTAMPDIFF(YEAR, birthdate, CURDATE())) as avg_age FROM contacts WHERE birthdate IS NOT NULL";
+
+        String sqlYoungest = "SELECT first_name, last_name, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate DESC LIMIT 1";
+        String sqlOldest = "SELECT first_name, last_name, birthdate FROM contacts WHERE birthdate IS NOT NULL ORDER BY birthdate ASC LIMIT 1";
+
+        String sqlMostSharedName = "SELECT first_name, COUNT(*) as cnt FROM contacts GROUP BY first_name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
+        String sqlMostSharedSurname = "SELECT last_name, COUNT(*) as cnt FROM contacts GROUP BY last_name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 1";
 
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement()) {
 
-            // --- Toplam ve LinkedIn ---
             ResultSet rs = stmt.executeQuery(sqlTotal);
             if (rs.next()) System.out.println("Total Contacts: " + ConsoleUI.CYAN_BOLD + rs.getInt("total") + ConsoleUI.RESET);
             rs.close();
@@ -433,7 +442,6 @@ public class Manager extends User {
 
             System.out.println("--------------------------------");
 
-            // --- Yaş İstatistikleri ---
             rs = stmt.executeQuery(sqlAvgAge);
             if (rs.next()) {
                 double avg = rs.getDouble("avg_age");
@@ -445,30 +453,27 @@ public class Manager extends User {
             }
             rs.close();
 
-            // En Genç
             rs = stmt.executeQuery(sqlYoungest);
             if (rs.next()) {
                 System.out.println("Youngest Contact: " + ConsoleUI.GREEN_BOLD +
-                        rs.getString("name") + " " + rs.getString("surname") +
+                        rs.getString("first_name") + " " + rs.getString("last_name") +
                         " (" + rs.getDate("birthdate") + ")" + ConsoleUI.RESET);
             }
             rs.close();
 
-            // En Yaşlı
             rs = stmt.executeQuery(sqlOldest);
             if (rs.next()) {
                 System.out.println("Oldest Contact:   " + ConsoleUI.RED_BOLD +
-                        rs.getString("name") + " " + rs.getString("surname") +
+                        rs.getString("first_name") + " " + rs.getString("last_name") +
                         " (" + rs.getDate("birthdate") + ")" + ConsoleUI.RESET);
             }
             rs.close();
 
             System.out.println("--------------------------------");
 
-            // --- İsim Paylaşımı Analizi ---
             rs = stmt.executeQuery(sqlMostSharedName);
             if (rs.next()) {
-                System.out.println("Most Shared Name: " + ConsoleUI.CYAN_BOLD + rs.getString("name") +
+                System.out.println("Most Shared Name: " + ConsoleUI.CYAN_BOLD + rs.getString("first_name") +
                         ConsoleUI.RESET + " (Shared by " + rs.getInt("cnt") + " individuals)");
             } else {
                 System.out.println("Most Shared Name: None (All unique)");
@@ -477,7 +482,7 @@ public class Manager extends User {
 
             rs = stmt.executeQuery(sqlMostSharedSurname);
             if (rs.next()) {
-                System.out.println("Most Shared Surname: " + ConsoleUI.CYAN_BOLD + rs.getString("surname") +
+                System.out.println("Most Shared Surname: " + ConsoleUI.CYAN_BOLD + rs.getString("last_name") +
                         ConsoleUI.RESET + " (Shared by " + rs.getInt("cnt") + " individuals)");
             } else {
                 System.out.println("Most Shared Surname: None (All unique)");
