@@ -3,13 +3,13 @@ package models;
 import Database.DatabaseConnection;
 import dao.ContactSearchDAO;
 import util.ConsoleUI;
-import java.sql.Date;
 
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -23,47 +23,73 @@ import java.util.Scanner;
  * </p>
  * <h3>Key Responsibilities:</h3>
  * <ul>
- * <li>Listing all contacts in a formatted table.</li>
- * <li>Sorting contacts dynamically by columns.</li>
+ * <li>Listing all contacts in a <b>paginated card view</b>.</li>
+ * <li>Sorting contacts dynamically by columns (including Middle Name, Secondary Phone, LinkedIn).</li>
  * <li>Changing their own account password securely.</li>
- * <li>Searching contacts via {@link ContactSearchDAO}.</li>
+ * <li>Searching contacts via {@link ContactSearchDAO} using sectioned menus.</li>
  * </ul>
- * @author Selcuk Aloba, Arda Dulger
+ *
+ * @author selcukaloba
+ * @author dulgerarda
  */
 public class Tester extends User {
 
     private final ContactSearchDAO searchDAO;
 
+    /**
+     * Default constructor for Tester.
+     * <p>
+     * Initializes the role as "Tester" and establishes a database connection
+     * for the search DAO.
+     * </p>
+     * @author selcukaloba
+     * @author dulgerarda
+     */
     public Tester() {
         super();
         this.setRole("Tester");
         this.searchDAO = new ContactSearchDAO();
     }
 
+    /**
+     * Parameterized constructor for creating a Tester object with specific details.
+     *
+     * @param userId   The unique ID of the user.
+     * @param username The username for login.
+     * @param name     The first name of the tester.
+     * @param surname  The last name of the tester.
+     */
     public Tester(int userId, String username, String name, String surname) {
         super();
-
         this.setUserId(userId);
         this.setUsername(username);
         this.setName(name);
         this.setSurname(surname);
         this.setRole("Tester");
-
         this.searchDAO = new ContactSearchDAO();
     }
 
+    /**
+     * Displays the main interactive menu for the Tester.
+     * <p>
+     * Handles user input to navigate between Listing, Searching, Sorting, and Password Management.
+     * </p>
+     *
+     * @param scanner The {@link Scanner} object used to capture user input.
+     * @author Eren Çakır Bircan
+     */
     @Override
     public void showMenu(Scanner scanner) {
         boolean running = true;
-
         while (running) {
+            String fullName = (getName() != null) ? getName() + " " + getSurname() : getUsername();
             String choice = ConsoleUI.showMenu(
-                    ConsoleUI.BLUE_BOLD + "Tester Panel: " + getName() + " " + getSurname() + ConsoleUI.RESET,
+                    ConsoleUI.BLUE_BOLD + "Tester Panel: " + fullName + ConsoleUI.RESET,
                     new String[]{
                             "1) Change password",
-                            "2) List all contacts",
-                            "3) Search contacts",
-                            "4) Sort contacts",
+                            "2) List all contacts (Paginated)",
+                            "3) Search contacts (Full)",
+                            "4) Sort contacts (Full)",
                             "",
                             "0) Logout"
                     },
@@ -80,18 +106,16 @@ public class Tester extends User {
             }
         }
     }
+
+
     /**
      * Helper method to hash passwords using SHA-256 algorithm.
-     * <p>
-     * This ensures that passwords are never stored or compared in plain text,
-     * adhering to security best practices.
-     * </p>
-     * * @param plainPassword The plain text password entered by the user.
+     *
+     * @param plainPassword The plain text password entered by the user.
      * @return The hexadecimal string representation of the hashed password.
-     * @throws RuntimeException If the SHA-256 algorithm is not available in the environment.
+     * @throws RuntimeException If the SHA-256 algorithm is not available.
      * @author selcukaloba
      */
-
     private String hashPassword(String plainPassword) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -107,22 +131,23 @@ public class Tester extends User {
             throw new RuntimeException("Hashing error", ex);
         }
     }
+
     /**
-     * Allows the Tester to change their own password.
+     * Allows the Tester to change their own password securely.
      * <p>
-     * This method performs several security checks:
-     * <ul>
-     * <li>Verifies the old password by hashing the input and comparing it with the stored hash.</li>
-     * <li>Enforces a minimum password length.</li>
-     * <li>Updates the password in the database securely using hashing.</li>
-     * </ul>
+     * Validates the old password (using hash comparison) and updates the database
+     * with the new hashed password.
      * </p>
-     * * @param scanner The {@link Scanner} object to receive password inputs.
+     *
+     * @param scanner The {@link Scanner} object to receive password inputs.
      * @author selcukaloba
      */
     protected void changePassword(Scanner scanner) {
-        ConsoleUI.clearConsole();
-        System.out.println(ConsoleUI.YELLOW_BOLD + "=== Change Password ===" + ConsoleUI.RESET);
+        try {
+            ConsoleUI.printSectionHeader("CHANGE PASSWORD");
+        } catch (Exception e) {
+            System.out.println("--- CHANGE PASSWORD ---");
+        }
 
         System.out.print("Enter current password: ");
         String oldPassInput = scanner.nextLine();
@@ -146,10 +171,8 @@ public class Tester extends User {
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setString(1, hashedNewPass);
             ps.setInt(2, this.getUserId());
-
             int rows = ps.executeUpdate();
             if (rows > 0) {
                 this.setPassword_hash(hashedNewPass);
@@ -157,150 +180,74 @@ public class Tester extends User {
             } else {
                 ConsoleUI.printError("Failed to update password.");
             }
-
         } catch (SQLException e) {
             ConsoleUI.printError("Database error: " + e.getMessage());
         }
     }
+
     /**
-     * Retrieves and lists all contacts from the database.
-     * <p>
-     * Executes a {@code SELECT * FROM contacts} query and displays the results
-     * in a tabular format using the helper method {@link #printResultSetTable(ResultSet)}.
-     * </p>
-     * * @param scanner The {@link Scanner} object (used for pausing the screen).
+     * Retrieves all contacts from the database and displays them in a paginated view.
+     *
+     * @param scanner The {@link Scanner} object used for navigation input.
      * @author selcukaloba
      */
     protected void listAllContacts(Scanner scanner) {
-        ConsoleUI.clearConsole();
-        System.out.println(ConsoleUI.YELLOW_BOLD + "=== List All Contacts ===" + ConsoleUI.RESET);
-
         String sql = "SELECT * FROM contacts";
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            printResultSetTable(rs);
-
-        } catch (SQLException e) {
-            ConsoleUI.printError("Database error: " + e.getMessage());
+        List<Contact> allContacts = fetchContactsFromQuery(sql);
+        if (allContacts.isEmpty()) {
+            ConsoleUI.printError("No contacts found in database.");
+            return;
         }
-
-        ConsoleUI.pause();
-    }
-    /**
-     *Iterates over the SQL{@code ResultSet} and displays the contact information in a format of table.
-     *<p>
-     *The main purpose of this helper is to be used in listing and sorting operations.
-     *It prints the following columns: <b>ID, First Name, Last Name, Phone, and Email</b>.
-     *</p>
-     *<p>
-     *The method handles iteration internally and catches any {@link SQLException} errors
-     *which can occur during data retrieval.
-     *</p>
-     *
-     *@param rs The {@link ResultSet} object obtained from executing a SQL query.
-     *If {@code null} or empty, appropriate messages are displayed.
-     * @author Arda Dülger
-     */
-    private void printResultSetTable(ResultSet rs) {
-        try {
-
-            String line = "-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
-
-            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
-            System.out.printf(
-                    ConsoleUI.YELLOW_BOLD +
-                            "%-4s %-15s %-15s %-15s %-12s %-15s %-15s %-12s %-25s %-25s %-25s%n" +
-                            ConsoleUI.RESET,
-                    "ID", "First Name","Middle Name", "Last Name", "Nickname", "Pri. Phone", "Sec. Phone", "Birthdate", "Address", "Email","LinkedIn"
-            );
-            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
-
-            boolean found = false;
-            while (rs.next()) {
-                found = true;
-
-                int id = rs.getInt("contact_id");
-                String first = rs.getString("first_name");
-                String middle = rs.getString("middle_name");
-                String last = rs.getString("last_name");
-                String nick = rs.getString("nickname");
-                String linkedin = rs.getString("linkedin_url");
-                String phone = rs.getString("phone_primary");
-                String secPhone = rs.getString("phone_secondary");
-
-                Date birth = null;
-                try { birth = rs.getDate("birthdate"); } catch (SQLException e) { }
-
-                String address = rs.getString("address");
-                String email = rs.getString("email");
-
-
-                if (nick == null) nick = "-";
-                if (address == null) address = "-";
-                if (secPhone == null || secPhone.isEmpty()) secPhone = "-";
-                if (linkedin == null || linkedin.trim().isEmpty()) linkedin = "-";
-
-                String birthStr = (birth == null) ? "-" : birth.toString();
-
-                System.out.printf(
-                        "%-4d %-15s %-15s %-15s %-12s %-15s %-15s %-12s %-25s %-25s %-25s%n",
-                        id, first,middle, last, nick, phone, secPhone, birthStr, address, email,linkedin
-                );
-            }
-
-            if (!found) {
-                System.out.println(ConsoleUI.RED_BOLD + "No records found." + ConsoleUI.RESET);
-            }
-            System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
-
-        } catch (SQLException e) {
-            ConsoleUI.printError("Error printing table: " + e.getMessage());
-        }
+        ConsoleUI.showPaginatedContactView(allContacts, scanner, "ALL CONTACTS");
     }
 
     /**
-     * Performs various person search operations and allows viewing the search sub-menu.
+     * Handles the advanced search functionality with a sectioned menu.
      * <p>
-     * This method allows users to perform searches without having to return to the main menu.
-     * Two types of search criteria can be specified.
-     * <ul>
-     * <li><b>Single-Field Search:</b> Search by First Name, Last Name, or Phone Number.</li>
-     * <li><b>Multi-Field Search:</b> Advanced search combinations (e.g., Name + Birth Month).</li>
-     * </ul>
+     * Supports 8 different search criteria including single-field and multi-field searches.
+     * Uses {@link ContactSearchDAO} for database operations.
      * </p>
-     * <p>
-     * Before sending a query to the database via Dao, it performs <b>input validation</b>
-     * For example, checking if the entered month is between 1-12 or if the entered phone number is a digit.
-     * @param scanner {@code Scanner } object is used to receive input.
-     * @author Arda Dulger
+     *
+     * @param scanner The {@link Scanner} object to read search queries.
+     * @author dulgerarda
      */
     protected void searchContacts(Scanner scanner) {
         boolean searching = true;
         while (searching) {
             ConsoleUI.clearConsole();
 
-            System.out.println(ConsoleUI.YELLOW_BOLD + "=== Search Contacts (Tester) ===" + ConsoleUI.RESET);
-            System.out.println("1) Search by First Name (Partial)");
-            System.out.println("2) Search by Middle Name (Partial)");
-            System.out.println("3) Search by Last Name (Partial)");
-            System.out.println("4) Search by Primary Phone  (Validated)");
-            System.out.println("5) Search by Secondary Phone (Validated)");
-            System.out.println("6) [Multi] Name AND Birth Month");
-            System.out.println("7) [Multi] Lastname AND City");
-            System.out.println("8) [Multi] Primary/Secondary Phone Part AND Email Part");
-            System.out.println("0) Back to Tester Menu");
-            System.out.print("Select search type: ");
+            String[][] sections = {
+                    {
+                            "1) Search by First Name",
+                            "2) Search by Middle Name",
+                            "3) Search by Last Name",
+                            "4) Search by Primary Phone",
+                            "5) Search by Secondary Phone"
+                    },
+                    {
+                            "6) Name AND Birth Month",
+                            "7) Lastname AND City",
+                            "8) Phone Part AND Email Part"
+                    },
+                    {
+                            ConsoleUI.RED_BOLD + "0) Back to Tester Menu" + ConsoleUI.RESET
+                    }
+            };
+            String[] titles = {"Single Field", "Multi-Field", ""};
 
+            try {
+                ConsoleUI.printSectionedMenu("SEARCH CONTACTS", sections, titles);
+            } catch (Exception e) {
+                System.out.println("=== SEARCH CONTACTS ===");
+            }
+
+            System.out.print(ConsoleUI.CYAN_BOLD + "▶ " + ConsoleUI.RESET + "Select search type: ");
             String choice = scanner.nextLine();
             List<Contact> results = null;
 
             switch (choice) {
                 case "1" -> {
                     System.out.print("Enter first name: ");
-                    String input = scanner.nextLine().trim();
                     results = searchDAO.searchByFirstName(scanner.nextLine());
                 }
                 case "2" -> {
@@ -312,52 +259,35 @@ public class Tester extends User {
                     results = searchDAO.searchByLastName(scanner.nextLine());
                 }
                 case "4" -> {
-                    System.out.print("Enter primary phone (digits only): ");
-                    String phone = scanner.nextLine();
-                    if (searchDAO.isValidPhoneNumber(phone)) {
-                        results = searchDAO.searchByPhoneNumber(phone);
-                    } else {
-                        System.out.println("Invalid format!");
-                    }
+                    System.out.print("Enter primary phone: ");
+                    String ph = scanner.nextLine();
+                    if (searchDAO.isValidPhoneNumber(ph)) results = searchDAO.searchByPhoneNumber(ph);
+                    else ConsoleUI.printError("Invalid format!");
                 }
-
                 case "5" -> {
-                    System.out.print("Enter secondary phone (digits only): ");
-                    String phone = scanner.nextLine();
-                    if (searchDAO.isValidPhoneNumber(phone)) {
-                        results = searchDAO.searchBySecondaryPhoneNumber(phone);
-                    } else {
-                        System.out.println("Invalid format!");
-                    }
+                    System.out.print("Enter secondary phone: ");
+                    String ph = scanner.nextLine();
+                    if (searchDAO.isValidPhoneNumber(ph)) results = searchDAO.searchBySecondaryPhoneNumber(ph);
+                    else ConsoleUI.printError("Invalid format!");
                 }
-
                 case "6" -> {
-
-                    System.out.print("Enter name: ");
-                    String name = scanner.nextLine();
-                    System.out.print("Enter birth month (1-12): ");
+                    System.out.print("Name: "); String n = scanner.nextLine();
+                    System.out.print("Month (1-12): ");
                     try {
-                        int month = Integer.parseInt(scanner.nextLine());
-                        if (searchDAO.isValidMonth(month)) results = searchDAO.searchByNameAndBirthMonth(name, month);
-                        else System.out.println("Invalid month!");
-                    } catch (NumberFormatException e) { System.out.println("Invalid input!"); }
+                        int m = Integer.parseInt(scanner.nextLine());
+                        if (searchDAO.isValidMonth(m)) results = searchDAO.searchByNameAndBirthMonth(n, m);
+                        else ConsoleUI.printError("Invalid month!");
+                    } catch (Exception e) { ConsoleUI.printError("Invalid input!"); }
                 }
                 case "7" -> {
-
-                    System.out.print("Enter lastname: ");
-                    String lname = scanner.nextLine();
-                    System.out.print("Enter city: ");
-                    String city = scanner.nextLine();
-                    results = searchDAO.searchByLastnameAndCity(lname, city);
+                    System.out.print("Lastname: "); String l = scanner.nextLine();
+                    System.out.print("City: "); String c = scanner.nextLine();
+                    results = searchDAO.searchByLastnameAndCity(l, c);
                 }
                 case "8" -> {
-
-                    System.out.print("Enter Pri/Sec phone part: ");
-                    String phonePart = scanner.nextLine();
-                    System.out.print("Enter email part: ");
-                    String emailPart = scanner.nextLine();
-
-                    results = searchDAO.searchByPhonePartAndEmailPart(phonePart, emailPart);
+                    System.out.print("Phone part: "); String p = scanner.nextLine();
+                    System.out.print("Email part: "); String e = scanner.nextLine();
+                    results = searchDAO.searchByPhonePartAndEmailPart(p, e);
                 }
                 case "0" -> searching = false;
                 default -> ConsoleUI.printInvalidChoice();
@@ -365,132 +295,118 @@ public class Tester extends User {
 
             if (results != null) {
                 if (results.isEmpty()) {
-                    System.out.println("No contacts found matching criteria.");
+                    ConsoleUI.printError("No contacts found.");
                 } else {
-                    System.out.println("Found " + results.size() + " record(s):");
-                    printSearchResults(results);
+                    ConsoleUI.showPaginatedContactView(results, scanner, "SEARCH RESULTS");
                 }
-                ConsoleUI.pause();
             } else if (!"0".equals(choice)) {
                 ConsoleUI.pause();
             }
         }
     }
+
     /**
-     * Prints the list of found people in tabular form.
+     * Handles the advanced sorting functionality.
      * <p>
-     * This helper allows to iterate and display the contact list.
-     * key attributes (ID, Name, Surname, Phone, Email) in arranged columns using {@code printf}.
-     * </p>
-     * @param contacts A {@code List} of {@link Contact} objects retrieved from the database.
-     * If the list empty, it will be not printed.(handled by caller)
-     * @author Arda Dulger
-     */
-    private void printSearchResults(List<Contact> contacts) {
-
-        String line = "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
-
-        System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
-        System.out.printf(ConsoleUI.YELLOW_BOLD +
-                        "%-4s %-15s %-15s %-15s %-12s %-15s %-15s %-12s %-25s %-25s %-25s%n" + ConsoleUI.RESET,
-                "ID", "First Name", "Middle Name", "Last Name","Nickname","Pri. Phone", "Sec. Phone", "Birthdate", "Address", "Email", "LinkedIn"
-        );
-        System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
-
-        if (contacts.isEmpty()) {
-            System.out.println(ConsoleUI.RED_BOLD + "No records found." + ConsoleUI.RESET);
-        } else {
-            for (Contact c : contacts) {
-                String birthStr = (c.getBirthdate() == null) ? "-" : c.getBirthdate().toString();
-
-                String middleName = c.getMiddleName();
-                if (middleName == null || middleName.trim().isEmpty()) middleName = "-";
-
-                String secPhone = c.getSecondaryPhone();
-                if (secPhone == null || secPhone.trim().isEmpty()) secPhone = "-";
-
-                String linkedIn = c.getLinkedinUrl();
-                if (linkedIn == null || linkedIn.trim().isEmpty()) linkedIn = "-";
-
-                String nickname = c.getNickname();
-                if (nickname == null || nickname.trim().isEmpty()) nickname = "-";
-
-                System.out.printf(
-                        "%-4d %-15s %-15s %-15s %-12s %-15s %-15s %-12s %-25s %-25s %-25s%n",
-                        c.getContactId(), c.getName(), middleName, c.getSurname(), nickname,
-                        c.getPrimaryPhone(), secPhone, birthStr, c.getAddress(), c.getEmail(), linkedIn
-                );
-            }
-        }
-
-        System.out.println(ConsoleUI.LIGHT_GRAY + line + ConsoleUI.RESET);
-    }
-    /**
-     * Sorts and displays contacts based on user-selected criteria.
-     * <p>
-     * Prompts the user to select a column:
-     * <ul>
-     * <li>1. First Name</li>
-     * <li>2. Last Name</li>
-     * <li>3. Phone Number</li>
-     * <li>4. Birth Date (Oldest to Newest or vice versa)</li>
-     * <li>5. City/State (Extracted from Address field)</li>
-     * </ul>
-     * Then prompts for direction (Ascending/Descending).
-     * Constructs a dynamic SQL query using safe mapping to prevent SQL Injection.
+     * Allows sorting by 9 different columns including Middle Name, Secondary Phone, and LinkedIn.
+     * Supports both Ascending and Descending order.
      * </p>
      *
-     * @param scanner The {@link Scanner} object to read user input.
-     * @author Selcuk Aloba
+     * @param scanner The {@link Scanner} object to read sort preferences.
+     * @author selcukaloba
      */
     protected void sortContacts(Scanner scanner) {
-        ConsoleUI.clearConsole();
-        System.out.println(ConsoleUI.YELLOW_BOLD + "=== Sort Contacts ===" + ConsoleUI.RESET);
+        try {
+            ConsoleUI.printSectionHeader("SORT CONTACTS");
+        } catch (Exception e) {
+            System.out.println("=== SORT CONTACTS ===");
+        }
 
-        System.out.println("Sort by:");
         System.out.println("1. First Name");
         System.out.println("2. Last Name");
-        System.out.println("3. Phone Number");
+        System.out.println("3. Primary Phone");
         System.out.println("4. Birth Date");
-        System.out.println("5. City/State (from Address)");
+        System.out.println("5. City/State");
         System.out.println("6. Nickname");
-        System.out.print("Choice: ");
+        System.out.println("7. Middle Name");
+        System.out.println("8. Secondary Phone");
+        System.out.println("9. LinkedIn URL");
+
+        System.out.print(ConsoleUI.CYAN_BOLD + "▶ " + ConsoleUI.RESET + "Choice: ");
         String colChoice = scanner.nextLine().trim();
 
         String orderByColumn = "first_name";
+        String sortLabel = "First Name";
+
         switch (colChoice) {
-            case "1" -> orderByColumn = "first_name";
-            case "2" -> orderByColumn = "last_name";
-            case "3" -> orderByColumn = "phone_primary";
-            case "4" -> orderByColumn = "birthdate";
-            case "5" -> orderByColumn = "TRIM(SUBSTRING_INDEX(address, ',', -1))";
-            case "6" -> orderByColumn = "nickname";
+            case "1" -> { orderByColumn = "first_name"; sortLabel = "First Name"; }
+            case "2" -> { orderByColumn = "last_name"; sortLabel = "Last Name"; }
+            case "3" -> { orderByColumn = "phone_primary"; sortLabel = "Primary Phone"; }
+            case "4" -> { orderByColumn = "birthdate"; sortLabel = "Birth Date"; }
+            case "5" -> { orderByColumn = "TRIM(SUBSTRING_INDEX(address, ',', -1))"; sortLabel = "City"; }
+            case "6" -> { orderByColumn = "nickname"; sortLabel = "Nickname"; }
+            case "7" -> { orderByColumn = "middle_name"; sortLabel = "Middle Name"; }
+            case "8" -> { orderByColumn = "phone_secondary"; sortLabel = "Secondary Phone"; }
+            case "9" -> { orderByColumn = "linkedin_url"; sortLabel = "LinkedIn"; }
             default -> ConsoleUI.printError("Invalid column! Defaulting to First Name.");
         }
 
-        System.out.println("Direction:");
+        System.out.println("\nDirection:");
         System.out.println("1. Ascending (A-Z)");
-        System.out.println("2. Descending (Z-A )");
-        System.out.print("Choice: ");
-        String dirChoice = scanner.nextLine().trim();
+        System.out.println("2. Descending (Z-A)");
+        System.out.print(ConsoleUI.CYAN_BOLD + "▶ " + ConsoleUI.RESET + "Choice: ");
+        String dir = scanner.nextLine().trim().equals("2") ? "DESC" : "ASC";
 
-        String direction = "ASC";
-        if (dirChoice.equals("2")) {
-            direction = "DESC";
+        String sql = "SELECT * FROM contacts ORDER BY " + orderByColumn + " " + dir;
+        List<Contact> sorted = fetchContactsFromQuery(sql);
+
+        if (sorted.isEmpty()) {
+            ConsoleUI.printError("No contacts found.");
+        } else {
+            ConsoleUI.showPaginatedContactView(sorted, scanner, "SORTED BY: " + sortLabel + " (" + dir + ")");
         }
+    }
 
-        String sql = "SELECT * FROM contacts ORDER BY " + orderByColumn + " " + direction;
 
+    /**
+     * Helper method to execute a SELECT query and map the ResultSet to a List of Contact objects.
+     * <p>
+     * Fetches all available columns including optional ones like Middle Name, Nickname, and LinkedIn.
+     * </p>
+     *
+     * @param sql The SQL query string to execute.
+     * @return A {@code List<Contact>} containing the results.
+     * @author dulgerarda
+     * @author selcukaloba
+     */
+    private List<Contact> fetchContactsFromQuery(String sql) {
+        List<Contact> contacts = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
-            System.out.println("Sorting... (" + direction + ")");
-            printResultSetTable(rs);
+            while (rs.next()) {
+                Contact c = new Contact();
+                c.setContactId(rs.getInt("contact_id"));
+                c.setName(rs.getString("first_name"));
+                c.setSurname(rs.getString("last_name"));
+                c.setPrimaryPhone(rs.getString("phone_primary"));
+                c.setAddress(rs.getString("address"));
+                c.setEmail(rs.getString("email"));
 
+                try { c.setMiddleName(rs.getString("middle_name")); } catch (Exception e) {}
+                try { c.setNickname(rs.getString("nickname")); } catch (Exception e) {}
+                try { c.setSecondaryPhone(rs.getString("phone_secondary")); } catch (Exception e) {}
+                try { c.setLinkedinUrl(rs.getString("linkedin_url")); } catch (Exception e) {}
+
+                try { c.setBirthdate(rs.getDate("birthdate")); }
+                catch (SQLException e) { try { c.setBirthdate(rs.getDate("birth_date")); } catch(Exception ex){} }
+
+                contacts.add(c);
+            }
         } catch (SQLException e) {
             ConsoleUI.printError("Database error: " + e.getMessage());
         }
-        ConsoleUI.pause();
+        return contacts;
     }
 }
