@@ -1,3 +1,4 @@
+
 import Database.DatabaseConnection;
 import models.User;
 import util.ConsoleUI;
@@ -63,8 +64,9 @@ public class Group09 {
      */
     public static void main(String[] args) {
 
-        runDiscoBallAnimation();               // 🪩 Start with disco ball
-        ConsoleUI.printBootAnimation();        // 🚀 Boot animation
+        runDiscoBallAnimation();
+        printGroup09DropBanner();
+        ConsoleUI.printBootAnimation();
 
         while (true) {
             ConsoleUI.clearConsole();
@@ -254,4 +256,42 @@ public class Group09 {
         System.out.print("\033[H\033[2J");
         System.out.flush();
     }
+    /**
+     * Prints a big "GROUP 09" banner that falls from the top of the console.
+     * <p>
+     * Uses the same style of big ASCII text as the other banners and simulates
+     * a falling effect by increasing the number of blank lines above the text.
+     */
+    private static void printGroup09DropBanner() {
+        String COLOR = ConsoleUI.YELLOW_BOLD;
+        String[] lines = {
+                "   _____ _____   ____  _    _ _____     ___   ___  ",
+                "  / ____|  __ \\ / __ \\| |  | |  __ \\   / _ \\ / _ \\ ",
+                " | |  __| |__) | |  | | |  | | |__) | | | | | (_) |",
+                " | | |_ |  _  /| |  | | |  | |  ___/  | | | |\\__, |",
+                " | |__| | | \\ \\| |__| | |__| | |      | |_| |  / / ",
+                "  \\_____|_|  \\_\\\\____/ \\____/|_|       \\___/  /_/  "
+        };
+
+        int bannerHeight = lines.length;
+        int maxOffset = Math.max(0, (HEIGHT / 2) - bannerHeight / 2);
+
+        for (int offset = 0; offset <= maxOffset; offset++) {
+            localClearConsole();
+
+            for (int i = 0; i < offset; i++) {
+                System.out.println();
+            }
+
+            for (String line : lines) {
+                System.out.println(COLOR + line + RESET);
+            }
+
+            try {
+                Thread.sleep(60);
+            } catch (InterruptedException ignored) {
+            }
+        }
+    }
+
 }
