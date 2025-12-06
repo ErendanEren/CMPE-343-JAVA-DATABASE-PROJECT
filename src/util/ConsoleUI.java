@@ -16,7 +16,12 @@ import java.util.Scanner;
  */
 public class ConsoleUI {
 
-    // ====== BASIC SETTINGS ======
+    private static final java.util.Scanner GLOBAL_SCANNER = new java.util.Scanner(System.in);
+
+    public static java.util.Scanner getScanner() {
+        return GLOBAL_SCANNER;
+    }
+
     /** Default width used when drawing boxed components. */
     public static final int WIDTH = 60;
 
@@ -41,13 +46,9 @@ public class ConsoleUI {
     public static final String LIGHT_GRAY  = "\u001B[37m";
     public static final String ITALIC      = "\u001B[3m";
 
-    // ====== ANIMATION SETTINGS ======
     /** Milliseconds to wait between animation frames. */
     private static final int ANIMATION_DELAY = 40;
 
-    // =========================================================
-    // BOOT / SHUTDOWN ANIMATION
-    // =========================================================
 
     /**
      * Prints the boot animation and logo of the Contact Management System.
@@ -65,15 +66,6 @@ public class ConsoleUI {
         printProgressBar("Verifying Schema", 100);
 
         clearConsole();
-
-        System.out.println(YELLOW_BOLD);
-        System.out.println("   ______ ____  ____  _    _ _____   ___   ___  ");
-        System.out.println("  / ____|  _ \\|  _ \\| |  | |  __ \\ / _ \\ / _ \\ ");
-        System.out.println(" | |  _| |) | |) | |  | | |) | | | | () |");
-        System.out.println(" | | |_ |  _ <|  _ <| |  | |  _/| | | |\\, |");
-        System.out.println(" | || | |) | |) | || | |    | |_| |  / / ");
-        System.out.println("  \\|/|/ \\/||     \\/  //  ");
-        System.out.println(RESET);
 
         System.out.println(YELLOW_BOLD + "   CONTACT MANAGEMENT SYSTEM v1.0" + RESET);
         System.out.println(LIGHT_GRAY + "   Created by Group 09 Engineering Team" + RESET);
@@ -146,9 +138,6 @@ public class ConsoleUI {
         }
     }
 
-    // =========================================================
-    // CLEAR + BASIC BOX / MENU
-    // =========================================================
 
     /**
      * Clears the console screen.
@@ -249,10 +238,13 @@ public class ConsoleUI {
     public static void pause() {
         System.out.print("Press Enter to continue...");
         try {
-            System.in.read();
-        } catch (Exception ignored) { }
+
+            GLOBAL_SCANNER.nextLine();
+        } catch (Exception ignored) {
+        }
         System.out.println();
     }
+
 
     /**
      * Displays a boxed menu and returns the user's choice as a string.
@@ -333,9 +325,6 @@ public class ConsoleUI {
         pause();
     }
 
-    // =========================================================
-    // PAGINATED CARD VIEW (CONTACT)
-    // =========================================================
 
     /**
      * Shows contacts as a paginated card view.
@@ -564,9 +553,6 @@ public class ConsoleUI {
         System.out.println(LIGHT_GRAY + line + RESET);
     }
 
-    // =========================================================
-    // SECTION HEADERS / SECTIONED MENUS
-    // =========================================================
 
     /**
      * Clears the console and prints a simple section header.
@@ -628,9 +614,6 @@ public class ConsoleUI {
         }
     }
 
-    // =========================================================
-    // HELPER METHODS
-    // =========================================================
 
     /**
      * Repeats a string a given number of times.
@@ -690,4 +673,5 @@ public class ConsoleUI {
             Thread.sleep(millis);
         } catch (InterruptedException ignored) { }
     }
+
 }

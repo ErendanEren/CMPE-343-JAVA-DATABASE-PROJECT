@@ -358,4 +358,9 @@ public class ContactSearchDAO {
     public boolean isValidMonth(int month) {
         return month >= 1 && month <= 12;
     }
+
+    public boolean isValidName(String input) {
+        return input != null && !input.trim().isEmpty() && input.matches("^[a-zA-ZğüşıöçĞÜŞİÖÇ\\s]+$");
+    }
+
 }

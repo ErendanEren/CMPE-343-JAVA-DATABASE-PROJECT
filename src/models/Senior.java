@@ -174,53 +174,189 @@ public class Senior extends Junior {
         ConsoleUI.clearConsole();
         System.out.println(ConsoleUI.YELLOW_BOLD + "=== Add New Contact (Senior) ===" + ConsoleUI.RESET);
 
-        System.out.print("First Name: ");
-        String firstName = scanner.nextLine().trim();
+        String firstName;
+        while (true) {
+            System.out.print("First Name: ");
+            String input = scanner.nextLine().trim();
 
-        System.out.print("Middle Name (optional): ");
-        String middleName = scanner.nextLine().trim();
+            if (input.isEmpty()) {
+                System.out.println(ConsoleUI.RED_BOLD +
+                        "First name is required and must contain only letters." +
+                        ConsoleUI.RESET);
+                continue;
+            }
+            if (isValidName(input)) {
+                firstName = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "First name can contain only letters and spaces." +
+                    ConsoleUI.RESET);
+        }
 
-        System.out.print("Last Name: ");
-        String lastName = scanner.nextLine().trim();
+        String middleName;
+        while (true) {
+            System.out.print("Middle Name (optional): ");
+            String input = scanner.nextLine().trim();
 
-        System.out.print("Nickname (optional): ");
-        String nickname = scanner.nextLine().trim();
+            if (input.isEmpty()) {
+                middleName = "";
+                break;
+            }
+            if (isValidName(input)) {
+                middleName = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "Middle name can contain only letters and spaces." +
+                    ConsoleUI.RESET);
+        }
 
-        System.out.print("Phone (primary): ");
-        String phone = scanner.nextLine().trim();
+        String lastName;
+        while (true) {
+            System.out.print("Last Name: ");
+            String input = scanner.nextLine().trim();
 
-        System.out.print("Phone (secondary, optional): ");
-        String phoneSec = scanner.nextLine().trim();
+            if (input.isEmpty()) {
+                System.out.println(ConsoleUI.RED_BOLD +
+                        "Last name is required and must contain only letters." +
+                        ConsoleUI.RESET);
+                continue;
+            }
+            if (isValidName(input)) {
+                lastName = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "Last name can contain only letters and spaces." +
+                    ConsoleUI.RESET);
+        }
 
-        System.out.print("Email (optional): ");
-        String email = scanner.nextLine().trim();
+        String nickname;
+        while (true) {
+            System.out.print("Nickname (optional): ");
+            String input = scanner.nextLine().trim();
 
-        System.out.print("LinkedIn URL (optional): ");
-        String linkedin = scanner.nextLine().trim();
+            if (input.isEmpty()) {
+                nickname = "";
+                break;
+            }
+            if (isValidName(input)) {
+                nickname = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "Nickname can contain only letters and spaces." +
+                    ConsoleUI.RESET);
+        }
+
+        String phone;
+        while (true) {
+            System.out.print("Phone (primary): ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                System.out.println(ConsoleUI.RED_BOLD +
+                        "Primary phone is required." + ConsoleUI.RESET);
+                continue;
+            }
+            if (isValidPhone(input)) {
+                phone = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "Primary phone must contain only digits (10–15 digits)." +
+                    ConsoleUI.RESET);
+        }
+
+        String phoneSec;
+        while (true) {
+            System.out.print("Phone (secondary, optional): ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                phoneSec = "";
+                break;
+            }
+            if (isValidPhone(input)) {
+                phoneSec = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "Secondary phone must contain only digits (10–15 digits)." +
+                    ConsoleUI.RESET);
+        }
+
+        String email;
+        while (true) {
+            System.out.print("Email (optional): ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                email = "";
+                break;
+            }
+            if (isValidEmail(input)) {
+                email = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "Email must be in a valid format (example@domain.com)." +
+                    ConsoleUI.RESET);
+        }
+
+        String linkedin;
+        while (true) {
+            System.out.print("LinkedIn URL (optional): ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                linkedin = "";
+                break;
+            }
+            if (isValidLinkedin(input)) {
+                linkedin = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "LinkedIn URL must contain 'linkedin.com'." +
+                    ConsoleUI.RESET);
+        }
 
         System.out.print("Address (optional): ");
         String address = scanner.nextLine().trim();
 
-        System.out.print("Birth date (YYYY-MM-DD, empty = unknown): ");
-        String birthInput = scanner.nextLine().trim();
-
-        if (firstName.isEmpty() || lastName.isEmpty() || phone.isEmpty()) {
-            ConsoleUI.printError("First name, last name and primary phone are required!");
-            ConsoleUI.pause();
-            return;
-        }
-
         java.sql.Date birthDateSql = null;
-        if (!birthInput.isEmpty()) {
+
+        while (true) {
+            System.out.print("Birth date (YYYY-MM-DD, empty = unknown): ");
+            String birthInput = scanner.nextLine().trim();
+
+            if (birthInput.isEmpty()) {
+                break;
+            }
+
             try {
                 LocalDate ld = LocalDate.parse(birthInput);
+                int year = ld.getYear();
+
+                if (!isValidBirthYear(year)) {
+                    System.out.println(ConsoleUI.RED_BOLD +
+                            "Year must be between 1900 and 2025." +
+                            ConsoleUI.RESET);
+                    continue;
+                }
+
                 birthDateSql = java.sql.Date.valueOf(ld);
+                break;
+
             } catch (DateTimeParseException e) {
-                ConsoleUI.printError("Invalid date format! Use YYYY-MM-DD. Contact not added.");
-                ConsoleUI.pause();
-                return;
+                System.out.println(ConsoleUI.RED_BOLD +
+                        "Invalid date format! Use YYYY-MM-DD." +
+                        ConsoleUI.RESET);
             }
         }
+
 
         String sql = """
                 INSERT INTO contacts
@@ -424,4 +560,70 @@ public class Senior extends Junior {
 
         ConsoleUI.pause();
     }
+    /**
+     * Validates a name-like input to contain only letters and spaces.
+     *
+     * @param input the raw name input from the user
+     * @return true if the input is non-empty and matches the allowed pattern, false otherwise
+     * @author Eren Çakır Bircan
+     */
+    private boolean isValidName(String input) {
+        return input != null
+                && !input.trim().isEmpty()
+                && input.matches("^[a-zA-ZğüşıöçĞÜŞİÖÇ\\s]+$");
+    }
+
+    /**
+     * Validates a phone number to contain only digits with a length between 10 and 15.
+     *
+     * @param phone the raw phone input from the user
+     * @return true if the phone consists only of digits and has a valid length, false otherwise
+     * @author Eren Çakır Bircan
+     */
+    private boolean isValidPhone(String phone) {
+        if (phone == null || phone.isEmpty()) return false;
+        return phone.matches("\\d{10,15}");
+    }
+
+    /**
+     * Performs a simple validation for an email address format.
+     * Checks for the presence of '@' and at least one '.' after it, in valid positions.
+     *
+     * @param email the raw email input from the user
+     * @return true if the email passes basic structural checks, false otherwise
+     * @author Eren Çakır Bircan
+     */
+    private boolean isValidEmail(String email) {
+        if (email == null || email.isEmpty()) return false;
+
+        int at = email.indexOf('@');
+        if (at <= 0 || at == email.length() - 1) return false;
+
+        int dotAfter = email.indexOf('.', at);
+        return dotAfter > at + 1 && dotAfter < email.length() - 1;
+    }
+
+    /**
+     * Validates a LinkedIn URL by checking whether it contains the domain 'linkedin.com'.
+     *
+     * @param url the raw LinkedIn URL input from the user
+     * @return true if the URL is non-empty and contains 'linkedin.com', false otherwise
+     * @author Eren Çakır Bircan
+     */
+    private boolean isValidLinkedin(String url) {
+        if (url == null || url.isEmpty()) return false;
+        String lower = url.toLowerCase();
+        return lower.contains("linkedin.com");
+    }
+    /**
+     * Validates that the birth year is within the allowed range [1900, 2025].
+     *
+     * @param year the year part of the birth date
+     * @return true if the year is between 1900 and 2025 (inclusive), false otherwise
+     * @author Eren Çakır Bircan
+     */
+    private boolean isValidBirthYear(int year) {
+        return year >= 1900 && year <= 2025;
+    }
+
 }

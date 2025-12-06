@@ -248,46 +248,93 @@ public class Tester extends User {
             switch (choice) {
                 case "1" -> {
                     System.out.print("Enter first name: ");
-                    results = searchDAO.searchByFirstName(scanner.nextLine());
+                    String name = scanner.nextLine();
+                    if (!searchDAO.isValidName(name)) {
+                        ConsoleUI.printError("Invalid format! Name must contain only letters.");
+                    } else {
+                        results = searchDAO.searchByFirstName(name);
+                    }
                 }
                 case "2" -> {
                     System.out.print("Enter middle name: ");
-                    results = searchDAO.searchByMiddleName(scanner.nextLine());
+                    String name = scanner.nextLine();
+                    if (!searchDAO.isValidName(name)) {
+                        ConsoleUI.printError("Invalid format! Name must contain only letters.");
+                    } else {
+                        results = searchDAO.searchByMiddleName(name);
+                    }
                 }
                 case "3" -> {
                     System.out.print("Enter last name: ");
-                    results = searchDAO.searchByLastName(scanner.nextLine());
+                    String name = scanner.nextLine();
+                    if (!searchDAO.isValidName(name)) {
+                        ConsoleUI.printError("Invalid format! Name must contain only letters.");
+                    } else {
+                        results = searchDAO.searchByLastName(name);
+                    }
                 }
                 case "4" -> {
                     System.out.print("Enter primary phone: ");
                     String ph = scanner.nextLine();
-                    if (searchDAO.isValidPhoneNumber(ph)) results = searchDAO.searchByPhoneNumber(ph);
-                    else ConsoleUI.printError("Invalid format!");
+                    if (searchDAO.isValidPhoneNumber(ph)) {
+                        results = searchDAO.searchByPhoneNumber(ph);
+                    } else {
+                        ConsoleUI.printError("Invalid format! Phone must contain digits only.");
+                    }
                 }
                 case "5" -> {
                     System.out.print("Enter secondary phone: ");
                     String ph = scanner.nextLine();
-                    if (searchDAO.isValidPhoneNumber(ph)) results = searchDAO.searchBySecondaryPhoneNumber(ph);
-                    else ConsoleUI.printError("Invalid format!");
+                    if (searchDAO.isValidPhoneNumber(ph)) {
+                        results = searchDAO.searchBySecondaryPhoneNumber(ph);
+                    } else {
+                        ConsoleUI.printError("Invalid format! Phone must contain digits only.");
+                    }
                 }
                 case "6" -> {
-                    System.out.print("Name: "); String n = scanner.nextLine();
-                    System.out.print("Month (1-12): ");
-                    try {
-                        int m = Integer.parseInt(scanner.nextLine());
-                        if (searchDAO.isValidMonth(m)) results = searchDAO.searchByNameAndBirthMonth(n, m);
-                        else ConsoleUI.printError("Invalid month!");
-                    } catch (Exception e) { ConsoleUI.printError("Invalid input!"); }
+                    System.out.print("Name: ");
+                    String n = scanner.nextLine();
+                    if (!searchDAO.isValidName(n)) {
+                        ConsoleUI.printError("Invalid format! Name must contain only letters.");
+                    } else {
+                        System.out.print("Month (1-12): ");
+                        try {
+                            int m = Integer.parseInt(scanner.nextLine());
+                            if (searchDAO.isValidMonth(m)) {
+                                results = searchDAO.searchByNameAndBirthMonth(n, m);
+                            } else {
+                                ConsoleUI.printError("Invalid month!");
+                            }
+                        } catch (NumberFormatException e) {
+                            ConsoleUI.printError("Invalid input! Please enter a number for month.");
+                        }
+                    }
                 }
                 case "7" -> {
-                    System.out.print("Lastname: "); String l = scanner.nextLine();
-                    System.out.print("City: "); String c = scanner.nextLine();
-                    results = searchDAO.searchByLastnameAndCity(l, c);
+                    System.out.print("Lastname: ");
+                    String l = scanner.nextLine();
+                    System.out.print("City: ");
+                    String c = scanner.nextLine();
+
+                    if (!searchDAO.isValidName(l)) {
+                        ConsoleUI.printError("Invalid format! Lastname must contain only letters.");
+                    } else if (!searchDAO.isValidName(c)) {
+                        ConsoleUI.printError("Invalid format! City must contain only letters.");
+                    } else {
+                        results = searchDAO.searchByLastnameAndCity(l, c);
+                    }
                 }
                 case "8" -> {
-                    System.out.print("Phone part: "); String p = scanner.nextLine();
-                    System.out.print("Email part: "); String e = scanner.nextLine();
-                    results = searchDAO.searchByPhonePartAndEmailPart(p, e);
+                    System.out.print("Phone part: ");
+                    String p = scanner.nextLine();
+                    System.out.print("Email part: ");
+                    String e = scanner.nextLine();
+
+                    if (!searchDAO.isValidPhoneNumber(p)) {
+                        ConsoleUI.printError("Invalid format! Phone part must be numeric.");
+                    } else {
+                        results = searchDAO.searchByPhonePartAndEmailPart(p, e);
+                    }
                 }
                 case "0" -> searching = false;
                 default -> ConsoleUI.printInvalidChoice();

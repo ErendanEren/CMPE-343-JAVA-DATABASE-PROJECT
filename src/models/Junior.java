@@ -150,33 +150,112 @@ public class Junior extends Tester {
 
         System.out.println("\n" + ConsoleUI.CYAN_BOLD + "Enter new values (Press ENTER to keep current value):" + ConsoleUI.RESET);
 
-        System.out.println("First Name (" + curName + "): ");
-        String newName = scanner.nextLine().trim();
-        if (newName.isEmpty()) newName = curName;
+        String newName;
+        while (true) {
+            System.out.println("First Name (" + curName + "): ");
+            String input = scanner.nextLine().trim();
 
-        System.out.println("Last Name (" + curSurname + "): ");
-        String newSurname = scanner.nextLine().trim();
-        if (newSurname.isEmpty()) newSurname = curSurname;
+            if (input.isEmpty()) {
+                newName = curName;
+                break;
+            }
+            if (isValidName(input)) {
+                newName = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "First name can contain only letters." + ConsoleUI.RESET);
+        }
 
-        System.out.println("Pri. Phone (" + curPhone + "): ");
-        String newPhone = scanner.nextLine().trim();
-        if (newPhone.isEmpty()) newPhone = curPhone;
+        String newSurname;
+        while (true) {
+            System.out.println("Last Name (" + curSurname + "): ");
+            String input = scanner.nextLine().trim();
 
-        System.out.println("Sec. Phone (" + curSecPhone + "): ");
-        String newSecPhone = scanner.nextLine().trim();
-        if (newSecPhone.isEmpty()) newSecPhone = curSecPhone;
+            if (input.isEmpty()) {
+                newSurname = curSurname;
+                break;
+            }
+            if (isValidName(input)) {
+                newSurname = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "Last name can contain only letters." + ConsoleUI.RESET);
+        }
 
-        System.out.println("Email (" + curEmail + "): ");
-        String newEmail = scanner.nextLine().trim();
-        if (newEmail.isEmpty()) newEmail = curEmail;
+        String newPhone;
+        while (true) {
+            System.out.println("Pri. Phone (" + curPhone + "): ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                newPhone = curPhone;
+                break;
+            }
+            if (isValidPhone(input)) {
+                newPhone = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "Primary phone must contain only digits (10–15 digits)." + ConsoleUI.RESET);
+        }
+
+        String newSecPhone;
+        while (true) {
+            System.out.println("Sec. Phone (" + curSecPhone + "): ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                newSecPhone = curSecPhone;
+                break;
+            }
+            if (isValidPhone(input)) {
+                newSecPhone = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "Secondary phone must contain only digits (10–15 digits)." + ConsoleUI.RESET);
+        }
+
+        String newEmail;
+        while (true) {
+            System.out.println("Email (" + curEmail + "): ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                newEmail = curEmail;
+                break;
+            }
+            if (isValidEmail(input)) {
+                newEmail = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "Email must be in a valid format (example@domain.com)." + ConsoleUI.RESET);
+        }
 
         System.out.println("Address (" + curAddr + "): ");
         String newAddr = scanner.nextLine().trim();
         if (newAddr.isEmpty()) newAddr = curAddr;
 
-        System.out.println("LinkedIn (" + curLinkedin + "): ");
-        String newLinkedin = scanner.nextLine().trim();
-        if (newLinkedin.isEmpty()) newLinkedin = curLinkedin;
+        String newLinkedin;
+        while (true) {
+            System.out.println("LinkedIn (" + curLinkedin + "): ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                newLinkedin = curLinkedin;
+                break;
+            }
+            if (isValidLinkedin(input)) {
+                newLinkedin = input;
+                break;
+            }
+            System.out.println(ConsoleUI.RED_BOLD +
+                    "LinkedIn URL must contain 'linkedin.com'." + ConsoleUI.RESET);
+        }
+
 
         String updateSql = "UPDATE contacts SET first_name=?, last_name=?, phone_primary=?, phone_secondary=?, email=?, address=?, linkedin_url=?, updated_at=CURRENT_TIMESTAMP WHERE contact_id=?";
 
@@ -255,4 +334,61 @@ public class Junior extends Tester {
 
         ConsoleUI.pause();
     }
+
+    /**
+     * Validates a name-like input to contain only letters and spaces.
+     *
+     * @param input the raw name input from the user
+     * @return true if the input is non-empty and matches the allowed pattern, false otherwise
+     * @author Arda Dülger
+     */
+    private boolean isValidName(String input) {
+        return input != null
+                && !input.trim().isEmpty()
+                && input.matches("^[a-zA-ZğüşıöçĞÜŞİÖÇ\\s]+$");
+    }
+
+    /**
+     * Validates a phone number to contain only digits with a length between 10 and 15.
+     *
+     * @param phone the raw phone input from the user
+     * @return true if the phone consists only of digits and has a valid length, false otherwise
+     * @author Arda Dülger
+     */
+    private boolean isValidPhone(String phone) {
+        if (phone == null || phone.isEmpty()) return false;
+        return phone.matches("\\d{10,15}");
+    }
+
+    /**
+     * Performs a simple validation for an email address format.
+     * Checks for the presence of '@' and at least one '.' after it, in valid positions.
+     *
+     * @param email the raw email input from the user
+     * @return true if the email passes basic structural checks, false otherwise
+     * @author Arda Dülger
+     */
+    private boolean isValidEmail(String email) {
+        if (email == null || email.isEmpty()) return false;
+
+        int at = email.indexOf('@');
+        if (at <= 0 || at == email.length() - 1) return false;
+
+        int dotAfter = email.indexOf('.', at);
+        return dotAfter > at + 1 && dotAfter < email.length() - 1;
+    }
+
+    /**
+     * Validates a LinkedIn URL by checking whether it contains the domain 'linkedin.com'.
+     *
+     * @param url the raw LinkedIn URL input from the user
+     * @return true if the URL is non-empty and contains 'linkedin.com', false otherwise
+     * @author Arda Dülger
+     */
+    private boolean isValidLinkedin(String url) {
+        if (url == null || url.isEmpty()) return false;
+        String lower = url.toLowerCase();
+        return lower.contains("linkedin.com");
+    }
+
 }
